@@ -1,0 +1,31 @@
+{
+  "name": "adp",
+  "version": "1.0.0",
+  "description": "Architectural Discipline Package integration",
+  "author": "Plures",
+  "dependencies": {
+    "dev": [
+      "@architectural-discipline/cli",
+      "@architectural-discipline/core",
+      "@architectural-discipline/eslint-plugin"
+    ],
+    "prod": [
+      "@architectural-discipline/monorepo"
+    ]
+  },
+  "configFiles": [
+    ".adp-config.json",
+    "eslint.config.js"
+  ],
+  "scripts": {
+    "adp:analyze": "tsx node_modules/@architectural-discipline/monorepo/packages/cli/src/cli.ts analyze",
+    "adp:recommend": "tsx node_modules/@architectural-discipline/monorepo/packages/cli/src/cli.ts recommend",
+    "adp:check": "tsx node_modules/@architectural-discipline/monorepo/packages/cli/src/cli.ts analyze --format json"
+  },
+  "features": {
+    "codeAnalysis": true,
+    "eslintIntegration": true,
+    "recommendations": true
+  }
+}
+

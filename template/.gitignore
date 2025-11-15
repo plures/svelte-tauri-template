@@ -1,0 +1,60 @@
+node_modules/
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/android/app/build/
+src-tauri/android/.gradle/
+src-tauri/ios/build/
+src-tauri/ios/Pods/
+*.ipa
+*.apk
+*.aab
+*.dmg
+*.msi
+*.deb
+*.AppImage
+
+# Certificates and keys (NEVER commit these!)
+*.p12
+*.pfx
+*.mobileprovision
+*.jks
+*.keystore
+*.key
+*.cert
+*.pem
+*.asc
+*.gpg
+android-release-key.jks
+*.keystore
+certificate.pfx
+certificate_base64.txt
+keystore_base64.txt
+private_key_base64.txt
+
+# ADP analysis reports (optional - can be committed if desired)
+.adp-reports/
+*.adp-report.json
+

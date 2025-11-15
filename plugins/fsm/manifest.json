@@ -1,0 +1,20 @@
+{
+  "name": "fsm",
+  "version": "0.0.0",
+  "description": "Finite State Machine library (xstate-like) integration",
+  "author": "Plures",
+  "status": "planned",
+  "dependencies": {
+    "dev": [],
+    "prod": []
+  },
+  "configFiles": [],
+  "scripts": {},
+  "features": {
+    "stateMachine": true,
+    "stateCharts": true,
+    "visualization": true
+  },
+  "notes": "This plugin will be available when plures/fsm is created and released"
+}
+

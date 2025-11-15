@@ -1,0 +1,43 @@
+{
+  "placeholders": {
+    "PROJECT_NAME": {
+      "description": "Project name (e.g., 'My Awesome App')",
+      "default": "My App",
+      "required": true
+    },
+    "PROJECT_DESCRIPTION": {
+      "description": "Project description",
+      "default": "A cross-platform application built with Svelte 5 and Tauri 2",
+      "required": true
+    },
+    "PROJECT_IDENTIFIER": {
+      "description": "Package identifier (e.g., 'com.example.myapp')",
+      "default": "com.example.app",
+      "required": true,
+      "validation": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+    },
+    "AUTHOR_NAME": {
+      "description": "Author name",
+      "default": "Your Name",
+      "required": true
+    },
+    "AUTHOR_EMAIL": {
+      "description": "Author email",
+      "default": "your.email@example.com",
+      "required": true,
+      "validation": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+    },
+    "GITHUB_REPO": {
+      "description": "GitHub repository URL (optional)",
+      "default": "",
+      "required": false
+    },
+    "VERSION": {
+      "description": "Initial version",
+      "default": "0.1.0",
+      "required": true,
+      "validation": "^\\d+\\.\\d+\\.\\d+$"
+    }
+  }
+}
+

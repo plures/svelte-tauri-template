@@ -1,0 +1,863 @@
+name: Release
+
+on:
+  # Manual trigger with version bump
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+      release_notes:
+        description: 'Release notes (markdown supported)'
+        required: false
+        type: string
+        default: ''
+  # Automatic triggers
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+    paths-ignore:
+      - '**.md'
+      - '.github/workflows/update-manifest.yml'
+      - '.github/workflows/android-build.yml'
+      - '.github/workflows/ios-build.yml'
+      - '.github/workflows/desktop-build.yml'
+      - 'docs/**'
+
+jobs:
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      tag: ${{ steps.bump.outputs.tag }}
+      upload_url: ${{ steps.release_outputs.outputs.upload_url }}
+      release_id: ${{ steps.release_outputs.outputs.id }}
+      release_url: ${{ steps.release_outputs.outputs.url }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Always checkout main branch for releases
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+      - name: Verify we're on main branch
+        run: |
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          echo "Current branch: $CURRENT_BRANCH"
+          if [ "$CURRENT_BRANCH" != "main" ] && [ "$CURRENT_BRANCH" != "master" ]; then
+            echo "⚠️  Not on main/master, checking out main..."
+            git checkout main || git checkout master || {
+              echo "❌ Failed to checkout main/master branch"
+              exit 1
+            }
+          fi
+          echo "✅ On branch: $(git rev-parse --abbrev-ref HEAD)"
+
+      - name: Determine version and bump if needed
+        id: bump
+        run: |
+          # Check if triggered by tag push
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
+            # Tag push - extract version from tag
+            TAG_NAME="${{ github.ref_name }}"
+            VERSION=${TAG_NAME#v}  # Remove 'v' prefix if present
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+            echo "should_bump=false" >> $GITHUB_OUTPUT
+            echo "✅ Triggered by tag push: $TAG_NAME (version: $VERSION)"
+          else
+            # Need to bump version - determine bump type
+            if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+              BUMP_TYPE="${{ github.event.inputs.version_bump }}"
+              echo "✅ Triggered manually with bump: $BUMP_TYPE"
+            else
+              BUMP_TYPE="patch"
+              echo "✅ Triggered by push to main (default: patch bump)"
+            fi
+            
+            # Get current version
+            CURRENT_VERSION=$(node -e "const fs=require('fs'); const config=JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json')); console.log(config.version);")
+            echo "Current version: $CURRENT_VERSION"
+            
+            echo "Bumping version: $BUMP_TYPE"
+            
+            # Bump version (capture output properly)
+            node scripts/bump-version.js $BUMP_TYPE > bump_output.txt 2>&1
+            cat bump_output.txt
+            
+            # Extract new version from output
+            NEW_VERSION=$(grep "New version:" bump_output.txt | awk '{print $3}')
+            if [ -z "$NEW_VERSION" ]; then
+              echo "❌ Failed to extract new version from bump script output"
+              cat bump_output.txt
+              exit 1
+            fi
+            
+            echo "New version: $NEW_VERSION"
+            
+            # Set outputs
+            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "should_bump=true" >> $GITHUB_OUTPUT
+            
+            # Verify version was updated
+            VERIFIED_VERSION=$(node -e "const fs=require('fs'); const config=JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json')); console.log(config.version);")
+            if [ "$VERIFIED_VERSION" != "$NEW_VERSION" ]; then
+              echo "❌ Version mismatch! Expected $NEW_VERSION but got $VERIFIED_VERSION"
+              exit 1
+            fi
+            
+            echo "✅ Version bumped to $NEW_VERSION"
+          fi
+
+      - name: Create release notes
+        id: release_notes
+        run: |
+          NOTES="${{ github.event.inputs.release_notes }}"
+          
+          if [ -z "$NOTES" ]; then
+            # Generate default release notes from git log
+            PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            if [ -n "$PREV_TAG" ]; then
+              NOTES=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+            else
+              NOTES="Initial release"
+            fi
+          fi
+          
+          # Add version header
+          NOTES="# Release ${{ steps.bump.outputs.tag }}\n\n$NOTES"
+          
+          # Save to file for later use
+          echo -e "$NOTES" > release_notes.md
+          
+          # Output for GitHub release
+          {
+            echo 'notes<<EOF'
+            echo -e "$NOTES"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+          
+          echo "Release notes prepared"
+          cat release_notes.md
+
+      - name: Update CHANGELOG
+        if: steps.bump.outputs.should_bump == 'true'
+        run: |
+          node scripts/update-changelog.js ${{ steps.bump.outputs.version }} release_notes.md
+          cat CHANGELOG.md | head -30
+
+      - name: Commit version bump and changelog
+        id: commit
+        if: steps.bump.outputs.should_bump == 'true'
+        run: |
+          git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml CHANGELOG.md
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}"
+          
+          # Get the commit SHA
+          COMMIT_SHA=$(git rev-parse HEAD)
+          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "Commit SHA: $COMMIT_SHA"
+          
+          # Get current branch name
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          echo "Current branch: $CURRENT_BRANCH"
+          
+          # Push to current branch (should be main)
+          git push origin HEAD:$CURRENT_BRANCH || {
+            echo "❌ Failed to push to $CURRENT_BRANCH"
+            exit 1
+          }
+          
+          echo "✅ Pushed version bump commit to $CURRENT_BRANCH"
+
+      - name: Create and push tag
+        if: steps.bump.outputs.should_bump == 'true'
+        run: |
+          # Create tag pointing to the commit we just pushed
+          git tag -a "${{ steps.bump.outputs.tag }}" -m "Release ${{ steps.bump.outputs.tag }}"
+          
+          # Push tag
+          git push origin "${{ steps.bump.outputs.tag }}" || {
+            echo "⚠️  Failed to push tag, retrying..."
+            sleep 2
+            git push origin "${{ steps.bump.outputs.tag }}"
+          }
+          
+          echo "✅ Tag ${{ steps.bump.outputs.tag }} created and pushed"
+
+      - name: Wait for tag to be available
+        run: |
+          # For tag pushes, tag already exists
+          if [[ "${{ steps.bump.outputs.should_bump }}" == "false" ]]; then
+            echo "✅ Tag already exists (triggered by tag push)"
+            exit 0
+          fi
+          
+          # Wait a moment for tag to propagate
+          sleep 5
+          # Verify tag exists
+          git fetch --tags
+          if git rev-parse "${{ steps.bump.outputs.tag }}" >/dev/null 2>&1; then
+            echo "✅ Tag ${{ steps.bump.outputs.tag }} exists"
+          else
+            echo "⚠️  Tag not found locally, fetching..."
+            git fetch origin tag "${{ steps.bump.outputs.tag }}" || {
+              echo "❌ Tag ${{ steps.bump.outputs.tag }} not found after fetch"
+              exit 1
+            }
+          fi
+
+      - name: Check if release exists
+        id: check_release
+        run: |
+          if gh release view "${{ steps.bump.outputs.tag }}" --repo ${{ github.repository }} 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Release ${{ steps.bump.outputs.tag }} already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  Release ${{ steps.bump.outputs.tag }} does not exist yet"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Create GitHub Release
+        id: create_release
+        if: steps.check_release.outputs.exists != 'true'
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.bump.outputs.tag }}
+          name: Release ${{ steps.bump.outputs.tag }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+          files: |
+            CHANGELOG.md
+
+      - name: Get existing release info
+        id: get_release
+        if: steps.check_release.outputs.exists == 'true'
+        run: |
+          RELEASE_ID=$(gh release view "${{ steps.bump.outputs.tag }}" --repo ${{ github.repository }} --json id -q .id)
+          RELEASE_URL=$(gh release view "${{ steps.bump.outputs.tag }}" --repo ${{ github.repository }} --json url -q .url)
+          UPLOAD_URL=$(gh api repos/${{ github.repository }}/releases/$RELEASE_ID --jq .upload_url | sed 's/{.*}//')
+          echo "id=$RELEASE_ID" >> $GITHUB_OUTPUT
+          echo "url=$RELEASE_URL" >> $GITHUB_OUTPUT
+          echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set release outputs
+        id: release_outputs
+        run: |
+          if [[ "${{ steps.check_release.outputs.exists }}" == "true" ]]; then
+            echo "id=${{ steps.get_release.outputs.id }}" >> $GITHUB_OUTPUT
+            echo "url=${{ steps.get_release.outputs.url }}" >> $GITHUB_OUTPUT
+            echo "upload_url=${{ steps.get_release.outputs.upload_url }}" >> $GITHUB_OUTPUT
+          else
+            echo "id=${{ steps.create_release.outputs.id }}" >> $GITHUB_OUTPUT
+            echo "url=${{ steps.create_release.outputs.url }}" >> $GITHUB_OUTPUT
+            echo "upload_url=${{ steps.create_release.outputs.upload_url }}" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-release:
+    name: Build and Release (${{ matrix.platform }})
+    needs: prepare-release
+    runs-on: ${{ matrix.os }}
+    if: needs.prepare-release.result == 'success'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            target: x86_64-pc-windows-msvc
+            build_type: desktop
+          - os: macos-latest
+            platform: macos
+            target: aarch64-apple-darwin
+            build_type: desktop
+          - os: ubuntu-latest
+            platform: linux
+            target: x86_64-unknown-linux-gnu
+            build_type: desktop
+          - os: ubuntu-latest
+            platform: android
+            target: android
+            build_type: mobile
+          - os: macos-latest
+            platform: ios
+            target: ios
+            build_type: mobile
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Checkout the tag that was just created
+          ref: ${{ needs.prepare-release.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Verify tag and version
+        shell: bash
+        run: |
+          echo "Tag: ${{ needs.prepare-release.outputs.tag }}"
+          echo "Version: ${{ needs.prepare-release.outputs.version }}"
+          
+          # Verify version in files
+          TAURI_VERSION=$(node -e "const fs=require('fs'); const config=JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json')); console.log(config.version);")
+          PKG_VERSION=$(node -e "const fs=require('fs'); const pkg=JSON.parse(fs.readFileSync('package.json')); console.log(pkg.version);")
+          
+          echo "Tauri version: $TAURI_VERSION"
+          echo "Package version: $PKG_VERSION"
+          
+          if [ "$TAURI_VERSION" != "${{ needs.prepare-release.outputs.version }}" ]; then
+            echo "❌ Version mismatch in tauri.conf.json"
+            exit 1
+          fi
+          
+          if [ "$PKG_VERSION" != "${{ needs.prepare-release.outputs.version }}" ]; then
+            echo "❌ Version mismatch in package.json"
+            exit 1
+          fi
+          
+          echo "✅ Version verified"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+        if: matrix.target != 'android' && matrix.target != 'ios'
+      
+      - name: Install Rust (Android)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+        if: matrix.target == 'android'
+      
+      - name: Install Rust (iOS)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
+        if: matrix.target == 'ios'
+
+      - name: Install Rust Android targets
+        if: matrix.platform == 'android'
+        run: |
+          rustup target add aarch64-linux-android
+          rustup target add armv7-linux-androideabi
+          rustup target add i686-linux-android
+          rustup target add x86_64-linux-android
+
+      - name: Install Rust iOS targets
+        if: matrix.platform == 'ios'
+        run: |
+          rustup target add aarch64-apple-ios
+          rustup target add x86_64-apple-ios
+          rustup target add aarch64-apple-ios-sim
+
+      - name: Setup Java (Android)
+        if: matrix.platform == 'android'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK (Android)
+        if: matrix.platform == 'android'
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Android environment (Android)
+        if: matrix.platform == 'android'
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/tools" >> $GITHUB_PATH
+
+      - name: Install CocoaPods (iOS)
+        if: matrix.platform == 'ios'
+        run: |
+          sudo gem install cocoapods
+          pod --version
+
+      - name: Setup Xcode (iOS)
+        if: matrix.platform == 'ios'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install GitHub CLI (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          set -e
+          type -p curl >/dev/null || (sudo apt-get update && sudo apt-get install -y curl)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y gh
+      
+      - name: Install GitHub CLI (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          type -p curl >/dev/null || (sudo apt-get update && sudo apt-get install -y curl)
+          sudo mkdir -p /usr/share/keyrings
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          apt-get update
+          apt-get install -y gh
+
+      - name: Install GitHub CLI (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          winget install --id GitHub.cli
+
+      - name: Initialize Android (if needed)
+        if: matrix.platform == 'android'
+        shell: bash
+        run: |
+          if [ ! -d "src-tauri/android" ]; then
+            npx tauri android init --ci || echo "Android init skipped or already exists"
+          fi
+
+      - name: Initialize iOS (if needed)
+        if: matrix.platform == 'ios'
+        shell: bash
+        run: |
+          if [ ! -d "src-tauri/ios" ]; then
+            npx tauri ios init --ci || echo "iOS init skipped or already exists"
+          fi
+
+      - name: Setup Android Signing
+        if: matrix.platform == 'android'
+        shell: bash
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ]; then
+            echo "$ANDROID_KEYSTORE" | base64 -d > android-release-key.jks
+            echo "✅ Android keystore configured"
+          else
+            echo "⚠️  Android signing secrets not configured, building unsigned"
+          fi
+
+      - name: Setup iOS Code Signing
+        if: matrix.platform == 'ios'
+        shell: bash
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE }}
+          P12_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD || 'github-actions' }}
+        run: |
+          if [ -n "$BUILD_CERTIFICATE_BASE64" ] && [ -n "$BUILD_PROVISION_PROFILE_BASE64" ]; then
+            CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+            PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+            KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+            echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+            echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+
+            security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+            security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+            security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+            security list-keychain -d user -s $KEYCHAIN_PATH
+
+            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+            cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+            echo "✅ iOS code signing configured"
+          else
+            echo "⚠️  iOS code signing secrets not configured, building unsigned"
+          fi
+
+      - name: Build application
+        shell: bash
+        run: |
+          if [ "${{ matrix.platform }}" == "windows" ]; then
+            npm run tauri:build:windows
+          elif [ "${{ matrix.platform }}" == "macos" ]; then
+            npm run tauri:build:macos
+          elif [ "${{ matrix.platform }}" == "linux" ]; then
+            npm run tauri:build:linux
+          elif [ "${{ matrix.platform }}" == "android" ]; then
+            if [ -n "$ANDROID_KEYSTORE" ]; then
+              export ANDROID_KEYSTORE_PATH=android-release-key.jks
+              export KEYSTORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
+              export KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}"
+              export KEY_ALIAS="${{ secrets.ANDROID_KEY_ALIAS || 'release' }}"
+            fi
+            npx tauri android build
+          elif [ "${{ matrix.platform }}" == "ios" ]; then
+            export APPLE_TEAM_ID="${{ secrets.APPLE_TEAM_ID }}"
+            npx tauri ios build
+          fi
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+
+      - name: Sign bundles (if configured)
+        if: matrix.platform == 'windows'
+        env:
+          WINDOWS_SIGNING_CERTIFICATE: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE }}
+          WINDOWS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrEmpty($env:WINDOWS_SIGNING_CERTIFICATE)) {
+            Write-Host "⚠️  WINDOWS_SIGNING_CERTIFICATE not set, skipping signing"
+            exit 0
+          }
+          $certPath = "$env:RUNNER_TEMP\cert.pfx"
+          [System.IO.File]::WriteAllBytes($certPath, [System.Convert]::FromBase64String($env:WINDOWS_SIGNING_CERTIFICATE))
+          $env:WINDOWS_SIGNING_CERTIFICATE_PATH = $certPath
+          $msiFile = Get-ChildItem -Path "src-tauri\target\**\*.msi" | Select-Object -First 1
+          if ($msiFile) {
+            pwsh scripts/signing/windows-sign.ps1 -MsiPath $msiFile.FullName
+          }
+
+      - name: Sign bundles (macOS)
+        if: matrix.platform == 'macos' && matrix.build_type == 'desktop'
+        env:
+          MACOS_SIGNING_CERTIFICATE: ${{ secrets.MACOS_SIGNING_CERTIFICATE }}
+          MACOS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$MACOS_SIGNING_CERTIFICATE" ]; then
+            echo "⚠️  MACOS_SIGNING_CERTIFICATE not set, skipping signing"
+            exit 0
+          fi
+          # macOS signing would go here
+          echo "macOS signing not yet implemented"
+
+      - name: Sign update files
+        env:
+          TAURI_SIGNING_KEY: ${{ secrets.TAURI_SIGNING_KEY }}
+        run: |
+          if [ -z "$TAURI_SIGNING_KEY" ]; then
+            echo "⚠️  TAURI_SIGNING_KEY not set, skipping update file signing"
+            exit 0
+          fi
+          # Set up signing key
+          mkdir -p ~/.tauri
+          echo "$TAURI_SIGNING_KEY" | base64 -d > ~/.tauri/myapp.key
+          chmod 600 ~/.tauri/myapp.key
+          
+          # Sign bundles
+          bash scripts/sign-update-files.sh || echo "Signing failed, continuing..."
+
+      - name: Find release assets
+        id: find_assets
+        shell: bash
+        run: |
+          ASSETS=()
+          
+          # Find assets based on platform - prioritize installers/packages
+          if [ "${{ matrix.platform }}" == "windows" ]; then
+            # Windows: Prioritize MSI installer (primary package format)
+            while IFS= read -r asset; do
+              if [ -f "$asset" ]; then
+                ASSETS+=("$asset")
+                echo "Found: $asset"
+              fi
+            done < <(find src-tauri/target/release/bundle/msi -name "*.msi" 2>/dev/null | head -1)
+            # Also include signature files if they exist
+            while IFS= read -r asset; do
+              if [ -f "$asset" ]; then
+                ASSETS+=("$asset")
+                echo "Found signature: $asset"
+              fi
+            done < <(find src-tauri/target -name "*.msi.sig" 2>/dev/null)
+          elif [ "${{ matrix.platform }}" == "macos" ] && [ "${{ matrix.build_type }}" == "desktop" ]; then
+            # macOS: Prioritize DMG (preferred distribution format) and App bundle
+            # DMG is the installer package users download
+            while IFS= read -r asset; do
+              if [ -f "$asset" ]; then
+                ASSETS+=("$asset")
+                echo "Found: $asset"
+              fi
+            done < <(find src-tauri/target/release/bundle/dmg -name "*.dmg" 2>/dev/null | head -1)
+            # App bundle for direct installation
+            while IFS= read -r asset; do
+              if [ -f "$asset" ]; then
+                ASSETS+=("$asset")
+                echo "Found: $asset"
+              fi
+            done < <(find src-tauri/target/release/bundle/macos -name "*.app" -type d 2>/dev/null | head -1)
+            # Include signatures if they exist
+            while IFS= read -r asset; do
+              if [ -f "$asset" ]; then
+                ASSETS+=("$asset")
+                echo "Found signature: $asset"
+              fi
+            done < <(find src-tauri/target -name "*.dmg.sig" -o -name "*.app.tar.gz.sig" 2>/dev/null)
+          elif [ "${{ matrix.platform }}" == "linux" ]; then
+            # Linux: Prioritize AppImage (portable), DEB (Debian/Ubuntu), RPM (RedHat/Fedora)
+            # AppImage is portable and doesn't require installation
+            while IFS= read -r asset; do
+              if [ -f "$asset" ]; then
+                ASSETS+=("$asset")
+                echo "Found: $asset"
+              fi
+            done < <(find src-tauri/target/release/bundle/appimage -name "*.AppImage.tar.gz" 2>/dev/null | head -1)
+            # DEB package for Debian/Ubuntu
+            while IFS= read -r asset; do
+              if [ -f "$asset" ]; then
+                ASSETS+=("$asset")
+                echo "Found: $asset"
+              fi
+            done < <(find src-tauri/target/release/bundle/deb -name "*.deb" 2>/dev/null | head -1)
+            # RPM package for RedHat/Fedora
+            while IFS= read -r asset; do
+              if [ -f "$asset" ]; then
+                ASSETS+=("$asset")
+                echo "Found: $asset"
+              fi
+            done < <(find src-tauri/target/release/bundle/rpm -name "*.rpm" 2>/dev/null | head -1)
+            # Include signatures if they exist
+            while IFS= read -r asset; do
+              if [ -f "$asset" ]; then
+                ASSETS+=("$asset")
+                echo "Found signature: $asset"
+              fi
+            done < <(find src-tauri/target -name "*.deb.sig" -o -name "*.AppImage.tar.gz.sig" -o -name "*.rpm.sig" 2>/dev/null)
+          elif [ "${{ matrix.platform }}" == "android" ]; then
+            # Android: Prioritize APK (direct install) and AAB (Play Store)
+            # APK for direct download and installation
+            while IFS= read -r asset; do
+              if [ -f "$asset" ]; then
+                ASSETS+=("$asset")
+                echo "Found: $asset"
+              fi
+            done < <(find src-tauri/android/app/build/outputs/apk/release -name "*.apk" 2>/dev/null)
+            # AAB for Google Play Store distribution
+            while IFS= read -r asset; do
+              if [ -f "$asset" ]; then
+                ASSETS+=("$asset")
+                echo "Found: $asset"
+              fi
+            done < <(find src-tauri/android/app/build/outputs/bundle/release -name "*.aab" 2>/dev/null)
+          elif [ "${{ matrix.platform }}" == "ios" ]; then
+            # iOS: IPA package (required for App Store and TestFlight)
+            while IFS= read -r asset; do
+              if [ -f "$asset" ]; then
+                ASSETS+=("$asset")
+                echo "Found: $asset"
+              fi
+            done < <(find src-tauri/ios/build -name "*.ipa" 2>/dev/null)
+          fi
+          
+          if [ ${#ASSETS[@]} -eq 0 ]; then
+            echo "⚠️  No assets found for ${{ matrix.platform }}"
+            echo "assets=" >> $GITHUB_OUTPUT
+          else
+            echo "Found ${#ASSETS[@]} package(s) for ${{ matrix.platform }}"
+            printf 'assets=%s\n' "${ASSETS[*]}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload release assets
+        if: steps.find_assets.outputs.assets != ''
+        shell: bash
+        run: |
+          ASSETS="${{ steps.find_assets.outputs.assets }}"
+          
+          if [ -z "$ASSETS" ]; then
+            echo "⚠️  No assets found to upload for ${{ matrix.platform }}"
+            exit 0
+          fi
+          
+          # Count assets
+          ASSET_COUNT=$(echo "$ASSETS" | wc -w)
+          echo "📦 Uploading $ASSET_COUNT package(s) for ${{ matrix.platform }}..."
+          
+          UPLOADED=0
+          FAILED=0
+          
+          for asset in $ASSETS; do
+            if [ -f "$asset" ]; then
+              ASSET_NAME=$(basename "$asset")
+              ASSET_SIZE=$(du -h "$asset" | cut -f1)
+              echo "📤 Uploading: $ASSET_NAME (${ASSET_SIZE})"
+              
+              if gh release upload "${{ needs.prepare-release.outputs.tag }}" "$asset" --repo ${{ github.repository }} --clobber; then
+                echo "✅ Successfully uploaded: $ASSET_NAME"
+                UPLOADED=$((UPLOADED + 1))
+              else
+                echo "⚠️  Failed to upload $ASSET_NAME, retrying..."
+                sleep 3
+                if gh release upload "${{ needs.prepare-release.outputs.tag }}" "$asset" --repo ${{ github.repository }} --clobber; then
+                  echo "✅ Successfully uploaded on retry: $ASSET_NAME"
+                  UPLOADED=$((UPLOADED + 1))
+                else
+                  echo "❌ Failed to upload $ASSET_NAME after retry"
+                  FAILED=$((FAILED + 1))
+                fi
+              fi
+            else
+              echo "⚠️  Asset file not found: $asset"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+          
+          echo ""
+          echo "📊 Upload Summary for ${{ matrix.platform }}:"
+          echo "   ✅ Uploaded: $UPLOADED"
+          echo "   ❌ Failed: $FAILED"
+          
+          if [ $FAILED -gt 0 ]; then
+            echo "⚠️  Some packages failed to upload for ${{ matrix.platform }}"
+            exit 1
+          fi
+          
+          echo "✅ All packages uploaded successfully for ${{ matrix.platform }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  generate-update-manifest:
+    name: Generate Update Manifest
+    needs: [prepare-release, build-and-release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    if: always() && (needs.prepare-release.result == 'success')
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Checkout the tag to ensure we have the correct version
+          ref: ${{ needs.prepare-release.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install GitHub CLI
+        run: |
+          type -p curl >/dev/null || sudo apt install curl -y
+          sudo mkdir -p /usr/share/keyrings
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          apt update
+          apt install gh -y
+
+      - name: Get release notes
+        id: get_notes
+        run: |
+          gh release view ${{ needs.prepare-release.outputs.tag }} --repo ${{ github.repository }} --json body --jq '.body' > release_notes.txt || echo "Release ${{ needs.prepare-release.outputs.tag }}" > release_notes.txt
+          NOTES=$(cat release_notes.txt)
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Generate update manifest
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RELEASE_NOTES: ${{ steps.get_notes.outputs.notes }}
+        run: |
+          node scripts/generate-update-manifest.js latest.json ${{ needs.prepare-release.outputs.version }}
+          cat latest.json
+
+      - name: Upload manifest to release
+        run: |
+          gh release upload "${{ needs.prepare-release.outputs.tag }}" latest.json --repo ${{ github.repository }} --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create or update Gist with manifest
+        continue-on-error: true
+        env:
+          # Use PAT if available (needed for Gist access), fallback to GITHUB_TOKEN
+          GH_TOKEN: ${{ secrets.GITHUB_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Use PAT if available, otherwise use GITHUB_TOKEN (but it won't work for Gists)
+          if [ -z "$GH_TOKEN" ]; then
+            GH_TOKEN="$GITHUB_TOKEN"
+          fi
+          
+          # GITHUB_TOKEN doesn't have gist permissions, so skip if no PAT
+          if [ -z "${{ secrets.GITHUB_PAT }}" ]; then
+            echo "⚠️  GITHUB_PAT secret not found. Skipping Gist update."
+            echo "📋 Manifest is available at: https://github.com/${{ github.repository }}/releases/download/${{ needs.prepare-release.outputs.tag }}/latest.json"
+            echo ""
+            echo "💡 To enable Gist updates, create a GitHub Personal Access Token with 'gist' scope"
+            echo "   and add it as a repository secret named 'GITHUB_PAT'"
+            exit 0
+          fi
+          
+          if [ -n "${{ secrets.UPDATE_MANIFEST_GIST_ID }}" ]; then
+            echo "Updating existing Gist: ${{ secrets.UPDATE_MANIFEST_GIST_ID }}"
+            gh gist edit ${{ secrets.UPDATE_MANIFEST_GIST_ID }} latest.json --filename latest.json || {
+              echo "⚠️  Failed to update Gist, creating new one..."
+              GIST_OUTPUT=$(gh gist create latest.json --filename latest.json --public)
+              GIST_ID=$(echo "$GIST_OUTPUT" | grep -oP 'gist.github.com/[^/]+/\K[^/]+' || echo "")
+              if [ -n "$GIST_ID" ]; then
+                echo "✅ Created new Gist: $GIST_ID"
+                echo "⚠️  Update secret UPDATE_MANIFEST_GIST_ID to: $GIST_ID"
+              fi
+            }
+            echo "✅ Updated Gist"
+            echo "📋 Manifest URL: https://gist.githubusercontent.com/${{ github.repository_owner }}/${{ secrets.UPDATE_MANIFEST_GIST_ID }}/raw/latest.json"
+          else
+            echo "Creating new Gist..."
+            GIST_OUTPUT=$(gh gist create latest.json --filename latest.json --public)
+            GIST_ID=$(echo "$GIST_OUTPUT" | grep -oP 'gist.github.com/[^/]+/\K[^/]+' || echo "")
+            if [ -n "$GIST_ID" ]; then
+              echo "✅ Created Gist: $GIST_ID"
+              echo "📋 Manifest URL: https://gist.githubusercontent.com/${{ github.repository_owner }}/$GIST_ID/raw/latest.json"
+              echo ""
+              echo "⚠️  IMPORTANT: Add this to your repository secrets:"
+              echo "   Secret name: UPDATE_MANIFEST_GIST_ID"
+              echo "   Secret value: $GIST_ID"
+            else
+              echo "❌ Failed to extract Gist ID from output:"
+              echo "$GIST_OUTPUT"
+            fi
+          fi

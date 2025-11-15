@@ -1,0 +1,191 @@
+name: Build Desktop Apps
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'src-tauri/**'
+      - '.github/workflows/desktop-build.yml'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - windows
+          - macos
+          - linux
+      build_type:
+        description: 'Build type'
+        required: false
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - release
+
+jobs:
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    if: github.event.inputs.platform == 'windows' || github.event.inputs.platform == 'all' || github.event_name != 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Windows
+        run: npm run tauri:build:windows
+
+      - name: Sign Windows MSI
+        if: github.event.inputs.build_type == 'release' && secrets.WINDOWS_SIGNING_CERTIFICATE != ''
+        env:
+          WINDOWS_SIGNING_CERTIFICATE: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE }}
+          WINDOWS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          $certPath = "$env:RUNNER_TEMP\cert.pfx"
+          [System.IO.File]::WriteAllBytes($certPath, [System.Convert]::FromBase64String($env:WINDOWS_SIGNING_CERTIFICATE))
+          $env:WINDOWS_SIGNING_CERTIFICATE_PATH = $certPath
+          $msiFile = Get-ChildItem -Path "src-tauri\target\**\*.msi" | Select-Object -First 1
+          if ($msiFile) {
+            pwsh scripts/signing/windows-sign.ps1 -MsiPath $msiFile.FullName
+          }
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: src-tauri/target/**/*.msi
+          retention-days: 30
+
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    if: github.event.inputs.platform == 'macos' || github.event.inputs.platform == 'all' || github.event_name != 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build macOS
+        run: npm run tauri:build:macos
+
+      - name: Sign and Notarize macOS
+        if: github.event.inputs.build_type == 'release' && secrets.APPLE_SIGNING_IDENTITY != ''
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          chmod +x scripts/signing/macos-sign.sh
+          # Sign app bundle
+          appBundle=$(find src-tauri/target -name "*.app" -type d | head -n 1)
+          if [ -n "$appBundle" ]; then
+            ./scripts/signing/macos-sign.sh "$appBundle"
+          fi
+          # Sign DMG
+          dmgFile=$(find src-tauri/target -name "*.dmg" | head -n 1)
+          if [ -n "$dmgFile" ]; then
+            ./scripts/signing/macos-sign.sh "$dmgFile"
+          fi
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: src-tauri/target/**/*.dmg
+          retention-days: 30
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    if: github.event.inputs.platform == 'linux' || github.event.inputs.platform == 'all' || github.event_name != 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Linux
+        run: npm run tauri:build:linux
+
+      - name: Sign Linux Packages
+        if: github.event.inputs.build_type == 'release' && secrets.GPG_KEY_ID != ''
+        env:
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          chmod +x scripts/signing/linux-sign.sh
+          # Import GPG key
+          if [ -n "$GPG_PRIVATE_KEY" ]; then
+            echo "$GPG_PRIVATE_KEY" | base64 -d | gpg --import --batch --yes
+          fi
+          # Sign DEB
+          debFile=$(find src-tauri/target -name "*.deb" | head -n 1)
+          if [ -n "$debFile" ]; then
+            ./scripts/signing/linux-sign.sh "$debFile"
+          fi
+          # Sign RPM
+          rpmFile=$(find src-tauri/target -name "*.rpm" | head -n 1)
+          if [ -n "$rpmFile" ]; then
+            ./scripts/signing/linux-sign.sh "$rpmFile"
+          fi
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: |
+            src-tauri/target/**/*.deb
+            src-tauri/target/**/*.rpm
+            src-tauri/target/**/*.AppImage
+          retention-days: 30
+

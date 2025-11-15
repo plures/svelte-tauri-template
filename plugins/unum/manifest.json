@@ -1,0 +1,19 @@
+{
+  "name": "unum",
+  "version": "0.0.0",
+  "description": "unum numeric computation library integration",
+  "author": "Plures",
+  "status": "planned",
+  "dependencies": {
+    "dev": [],
+    "prod": []
+  },
+  "configFiles": [],
+  "scripts": {},
+  "features": {
+    "numericComputation": true,
+    "precision": true
+  },
+  "notes": "This plugin will be available when plures/unum is released"
+}
+

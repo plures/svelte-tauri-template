@@ -1,0 +1,59 @@
+{
+  "name": "{{PROJECT_NAME_SLUG}}",
+  "private": true,
+  "version": "{{VERSION}}",
+  "type": "module",
+  "description": "{{PROJECT_DESCRIPTION}}",
+  "author": "{{AUTHOR_NAME}} <{{AUTHOR_EMAIL}}>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "{{GITHUB_REPO}}"
+  },
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "prepare": "svelte-kit sync || echo ''",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:build:windows": "tauri build --target x86_64-pc-windows-msvc",
+    "tauri:build:macos": "tauri build --target aarch64-apple-darwin",
+    "tauri:build:linux": "tauri build --target x86_64-unknown-linux-gnu",
+    "tauri:android:dev": "tauri android dev",
+    "tauri:android:build": "tauri android build",
+    "tauri:ios:dev": "tauri ios dev",
+    "tauri:ios:build": "tauri ios build",
+    "tauri:bundle": "tauri bundle",
+    "tauri:bundle:windows": "tauri bundle --bundles msi",
+    "tauri:bundle:macos": "tauri bundle --bundles app,dmg",
+    "tauri:bundle:linux": "tauri bundle --bundles deb,appimage,rpm",
+    "tauri:build:no-bundle": "tauri build --no-bundle",
+    "clean": "node -e \"const fs=require('fs');['node_modules/.vite','.svelte-kit','build'].forEach(d=>{try{fs.rmSync(d,{recursive:true,force:true})}catch(e){}})\"",
+    "clean:vite": "node -e \"const fs=require('fs');try{fs.rmSync('node_modules/.vite',{recursive:true,force:true})}catch(e){}\"",
+    "clean:rust": "cargo clean --manifest-path src-tauri/Cargo.toml",
+    "clean:all": "npm run clean && npm run clean:rust",
+    "template:create": "node cli/bootstrap.js"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-auto": "^6.0.0",
+    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/kit": "^2.22.0",
+    "@sveltejs/vite-plugin-svelte": "^6.0.0",
+    "@tauri-apps/api": "^2.9.0",
+    "@tauri-apps/cli": "^2.9.4",
+    "svelte": "latest",
+    "svelte-check": "^4.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.0.0",
+    "vite": "^7.0.4"
+  },
+  "dependencies": {
+    "@tauri-apps/plugin-store": "^2.4.1",
+    "@tauri-apps/plugin-updater": "^2.9.0"
+  }
+}
+

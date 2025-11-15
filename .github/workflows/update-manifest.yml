@@ -1,0 +1,160 @@
+name: Generate Update Manifest
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v0.1.0)'
+        required: true
+        type: string
+
+jobs:
+  generate-manifest:
+    name: Generate Update Manifest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      gists: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get release version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            # Remove 'v' prefix if present
+            VERSION=${VERSION#v}
+          else
+            VERSION="${{ github.event.inputs.version }}"
+            # Remove 'v' prefix if present
+            VERSION=${VERSION#v}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Get release notes
+        id: get_notes
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            NOTES="${{ github.event.release.body }}"
+          else
+            NOTES="Release ${{ steps.get_version.outputs.version }}"
+          fi
+          # Escape newlines for JSON
+          NOTES=$(echo "$NOTES" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Generate update manifest
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RELEASE_NOTES: ${{ steps.get_notes.outputs.notes }}
+        run: |
+          node scripts/generate-update-manifest.js latest.json ${{ steps.get_version.outputs.version }}
+          cat latest.json
+
+      - name: Read signatures from release assets
+        id: read_signatures
+        continue-on-error: true
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          REPO="${{ github.repository }}"
+          
+          # Download and read signature files from release assets
+          # This assumes signatures are uploaded as release assets
+          gh release view v$VERSION --repo $REPO --json assets --jq '.assets[] | select(.name | endswith(".sig")) | "\(.name)|\(.browser_download_url)"' > sigs.txt || true
+          
+          if [ -s sigs.txt ]; then
+            echo "Found signature files:"
+            cat sigs.txt
+          fi
+
+      - name: Update manifest with signatures
+        if: steps.read_signatures.outcome == 'success'
+        run: |
+          # Update manifest with actual signatures
+          # This is a simplified version - you may need to customize based on your setup
+          node -e "
+            const fs = require('fs');
+            const manifest = JSON.parse(fs.readFileSync('latest.json', 'utf-8'));
+            // Read signatures from .sig files if available
+            // For now, we'll leave signatures empty and let the updater handle it
+            // Or populate from release assets
+            fs.writeFileSync('latest.json', JSON.stringify(manifest, null, 2));
+          "
+
+      - name: Upload manifest to release
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./latest.json
+          asset_name: latest.json
+          asset_content_type: application/json
+
+      - name: Create or update Gist with manifest
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if Gist ID is stored in secrets
+          if [ -n "${{ secrets.UPDATE_MANIFEST_GIST_ID }}" ]; then
+            echo "Updating existing Gist: ${{ secrets.UPDATE_MANIFEST_GIST_ID }}"
+            gh gist edit ${{ secrets.UPDATE_MANIFEST_GIST_ID }} latest.json --filename latest.json
+            echo "✅ Updated Gist"
+            echo "📋 Manifest URL: https://gist.githubusercontent.com/${{ github.repository_owner }}/${{ secrets.UPDATE_MANIFEST_GIST_ID }}/raw/latest.json"
+          else
+            echo "Creating new Gist..."
+            GIST_OUTPUT=$(gh gist create latest.json --filename latest.json --public)
+            GIST_ID=$(echo "$GIST_OUTPUT" | grep -oP 'gist.github.com/[^/]+/\K[^/]+' || echo "")
+            if [ -n "$GIST_ID" ]; then
+              echo "✅ Created Gist: $GIST_ID"
+              echo "📋 Manifest URL: https://gist.githubusercontent.com/${{ github.repository_owner }}/$GIST_ID/raw/latest.json"
+              echo ""
+              echo "⚠️  IMPORTANT: Add this to your repository secrets:"
+              echo "   Secret name: UPDATE_MANIFEST_GIST_ID"
+              echo "   Secret value: $GIST_ID"
+            else
+              echo "⚠️  Could not extract Gist ID. Please create Gist manually and add ID to secrets."
+            fi
+          fi
+
+      - name: Output instructions
+        run: |
+          echo "## Update Manifest Generated ✅"
+          echo ""
+          echo "### Next Steps:"
+          echo ""
+          echo "1. **Update tauri.conf.json** with the manifest URL:"
+          if [ -n "${{ secrets.UPDATE_MANIFEST_GIST_ID }}" ]; then
+            echo "   \`\`\`json"
+            echo "   \"endpoints\": ["
+            echo "     \"https://gist.githubusercontent.com/${{ github.repository_owner }}/${{ secrets.UPDATE_MANIFEST_GIST_ID }}/raw/latest.json\""
+            echo "   ]"
+            echo "   \`\`\`"
+          else
+            echo "   - Upload latest.json to a public location"
+            echo "   - Update endpoints in tauri.conf.json"
+          fi
+          echo ""
+          echo "2. **Sign your update files** before uploading to GitHub Releases"
+          echo "   \`bash scripts/sign-update-files.sh\`"
+          echo ""
+          echo "3. **Upload signed bundles** to GitHub Release: v${{ steps.get_version.outputs.version }}"
+          echo ""
+          echo "4. **Update signatures** in the manifest (or regenerate after uploading signatures)"
+
+

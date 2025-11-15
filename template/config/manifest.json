@@ -1,0 +1,28 @@
+{
+  "name": "svelte-tauri-template",
+  "version": "1.0.0",
+  "description": "Cross-platform application template with Svelte 5 and Tauri 2",
+  "author": "Plures",
+  "license": "MIT",
+  "framework": {
+    "frontend": "svelte",
+    "frontendVersion": "latest",
+    "backend": "tauri",
+    "backendVersion": "2.9.4"
+  },
+  "platforms": {
+    "desktop": ["windows", "macos", "linux"],
+    "mobile": ["android", "ios"]
+  },
+  "plugins": {
+    "required": ["adp"],
+    "optional": ["state-docs", "pluresdb", "unum", "fsm"]
+  },
+  "features": {
+    "autoUpdate": true,
+    "codeSigning": true,
+    "ciCd": true,
+    "multiPlatform": true
+  }
+}
+

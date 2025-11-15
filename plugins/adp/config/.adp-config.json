@@ -1,0 +1,26 @@
+{
+	"architectural-discipline": {
+		"version": "1.0.0",
+		"languages": {
+			"typescript": {
+				"maxLines": 300,
+				"maxComplexity": 10
+			},
+			"rust": {
+				"maxLines": 500,
+				"maxComplexity": 15
+			}
+		},
+		"ignore": [
+			"**/node_modules/**",
+			"**/dist/**",
+			"**/build/**",
+			"**/.svelte-kit/**",
+			"**/target/**",
+			"**/*.test.*",
+			"**/*.spec.*",
+			"**/src-tauri/target/**"
+		]
+	}
+}
+

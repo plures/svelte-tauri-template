@@ -1,0 +1,19 @@
+{
+  "name": "state-docs",
+  "version": "0.0.0",
+  "description": "State-docs integration for documentation generation from state management",
+  "author": "Plures",
+  "status": "planned",
+  "dependencies": {
+    "dev": [],
+    "prod": []
+  },
+  "configFiles": [],
+  "scripts": {},
+  "features": {
+    "documentation": true,
+    "stateAnalysis": true
+  },
+  "notes": "This plugin will be available when plures/state-docs is released"
+}
+
