@@ -79,7 +79,7 @@ This template is designed to integrate with:
 - 🔜 **plures/State-docs** - State documentation
 - 🔜 **plures/pluresdb** - Database system
 - 🔜 **plures/unum** - Numeric computation
-- 🔜 **plures/fsm** - Finite State Machine (to be created)
+- 🔜 **plures/praxis** - Application logic engine
 
 ## 📄 License
 
