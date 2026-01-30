@@ -77,6 +77,7 @@ my-new-app/
 - **adp**: Architectural Discipline Package (automatically included)
 
 #### Optional Plugins
+- **praxis**: The Full Plures Application Framework - declarative schemas, logic engine, component generation, and local-first data (v1.2.11)
 - **state-docs**: State documentation generation (planned)
 - **pluresdb**: Database integration (planned)
 - **unum**: Numeric computation library (planned)

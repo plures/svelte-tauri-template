@@ -26,6 +26,7 @@ The cross-platform framework template has been successfully implemented. This pr
 - **Location**: `plugins/` directory
 - **Implemented**:
   - ADP plugin (fully functional)
+  - Praxis plugin (fully functional)
 - **Planned** (placeholders created):
   - state-docs
   - pluresdb
@@ -101,6 +102,7 @@ npm run plugin:add adp
 ## Integration Roadmap
 
 - ✅ **plures/ADP** - Integrated and functional
+- ✅ **plures/praxis** - Integrated and functional (v1.2.11)
 - 🔜 **plures/State-docs** - Placeholder ready
 - 🔜 **plures/pluresdb** - Placeholder ready
 - 🔜 **plures/unum** - Placeholder ready

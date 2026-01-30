@@ -16,7 +16,7 @@
   },
   "plugins": {
     "required": ["adp"],
-    "optional": ["state-docs", "pluresdb", "unum", "fsm"]
+    "optional": ["praxis", "state-docs", "pluresdb", "unum", "fsm"]
   },
   "features": {
     "autoUpdate": true,

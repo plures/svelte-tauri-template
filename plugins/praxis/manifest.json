@@ -1,0 +1,29 @@
+{
+  "name": "praxis",
+  "version": "1.2.11",
+  "description": "The Full Plures Application Framework - declarative schemas, logic engine, component generation, and local-first data",
+  "author": "Plures",
+  "dependencies": {
+    "dev": [],
+    "prod": [
+      "@plures/praxis"
+    ]
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
+  },
+  "configFiles": [],
+  "scripts": {
+    "praxis": "praxis",
+    "praxis:generate": "praxis generate",
+    "praxis:validate": "praxis validate"
+  },
+  "features": {
+    "declarativeSchemas": true,
+    "logicEngine": true,
+    "componentGeneration": true,
+    "localFirstData": true,
+    "svelteIntegration": true,
+    "visualDevelopment": true
+  }
+}
