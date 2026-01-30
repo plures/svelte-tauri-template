@@ -18,6 +18,7 @@
 - ✅ Plugin manifest structure
 - ✅ Plugin installation scripts
 - ✅ ADP plugin fully implemented
+- ✅ Praxis plugin fully implemented
 - ✅ Placeholder plugins for future integrations:
   - state-docs
   - pluresdb
@@ -58,6 +59,7 @@
 
 ### Plugins
 - `plugins/adp/` - ADP integration (fully functional)
+- `plugins/praxis/` - Praxis integration (fully functional)
 - `plugins/state-docs/` - Placeholder for future
 - `plugins/pluresdb/` - Placeholder for future
 - `plugins/unum/` - Placeholder for future
