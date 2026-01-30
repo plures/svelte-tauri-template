@@ -22,9 +22,16 @@ export default async function install(projectDir) {
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
   
   // Add dependencies
+  if (!packageJson.devDependencies) {
+    packageJson.devDependencies = {};
+  }
   if (!packageJson.dependencies) {
     packageJson.dependencies = {};
   }
+  
+  manifest.dependencies.dev.forEach(dep => {
+    packageJson.devDependencies[dep] = `^${manifest.version}`;
+  });
   
   manifest.dependencies.prod.forEach(dep => {
     packageJson.dependencies[dep] = `^${manifest.version}`;
