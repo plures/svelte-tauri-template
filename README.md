@@ -43,6 +43,7 @@ npm run dev
 ### Available Plugins
 
 - **adp** (Required): Architectural Discipline Package
+- **praxis**: The Full Plures Application Framework - declarative schemas, logic engine, component generation, and local-first data
 - **state-docs** (Planned): State documentation generation
 - **pluresdb** (Planned): Database integration
 - **unum** (Planned): Numeric computation library
@@ -76,10 +77,10 @@ npm run plugin:list
 This template is designed to integrate with:
 
 - ✅ **plures/ADP** - Architectural Discipline Package (integrated)
+- ✅ **plures/praxis** - Application logic engine (integrated)
 - 🔜 **plures/State-docs** - State documentation
 - 🔜 **plures/pluresdb** - Database system
 - 🔜 **plures/unum** - Numeric computation
-- 🔜 **plures/praxis** - Application logic engine
 
 ## 📄 License
 
