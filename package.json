@@ -34,7 +34,9 @@
     "adp:check": "tsx node_modules/@architectural-discipline/monorepo/packages/cli/src/cli.ts analyze --format json",
     "template:create": "node cli/bootstrap.js",
     "plugin:list": "node cli/plugin-list.js",
+    "plugin:info": "node cli/plugin-info.js",
     "plugin:add": "node cli/plugin-add.js",
+    "plugin:remove": "node cli/plugin-remove.js",
     "test:e2e": "playwright test",
     "test": "npm run test:e2e"
   },
