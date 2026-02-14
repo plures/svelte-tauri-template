@@ -57,10 +57,14 @@ npm run plugin:list
 
 ## 📚 Documentation
 
-- [TEMPLATE_ARCHITECTURE.md](./TEMPLATE_ARCHITECTURE.md) - Architecture overview
-- [TEMPLATE_USAGE.md](./TEMPLATE_USAGE.md) - Usage guide
-- [TAURI_SETUP.md](./TAURI_SETUP.md) - Tauri setup
-- [DISTRIBUTION.md](./DISTRIBUTION.md) - Distribution guide
+Comprehensive documentation is available in the [docs/](./docs/) directory:
+
+- **[Usage Guide](./docs/USAGE.md)** - Create projects from this template
+- **[Architecture](./docs/ARCHITECTURE.md)** - System design and structure
+- **[Setup & Configuration](./docs/README.md#-setup--configuration)** - Tauri, mobile, and CI/CD setup
+- **[Distribution](./docs/README.md#-distribution--release)** - Release and distribution guides
+
+👉 **[View all documentation](./docs/README.md)**
 
 ## 🏗️ Structure
 

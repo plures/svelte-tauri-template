@@ -16,7 +16,7 @@ According to the [official Tauri documentation](https://v2.tauri.app/start/prere
 - **Android**: Can be set up on Windows, macOS, or Linux
 - **iOS**: Requires macOS and Xcode (cannot build iOS apps on Windows)
 - Mobile support in Tauri 2 is **fully supported** (not experimental)
-- Use GitHub Actions for iOS builds without a Mac (see [CI_CD_SETUP.md](./CI_CD_SETUP.md))
+- Use GitHub Actions for iOS builds without a Mac (see [CI_CD.md](./CI_CD.md))
 
 ## Android Setup
 

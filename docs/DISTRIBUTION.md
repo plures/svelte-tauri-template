@@ -65,11 +65,11 @@ If not set in `tauri.conf.json`, Tauri falls back to `src-tauri/Cargo.toml` > `p
 
 Code signing is **required** for most distribution methods. See platform-specific guides:
 
-- [macOS Code Signing](./TESTFLIGHT_SETUP.md#code-signing) - Required for App Store and DMG distribution
+- [macOS Code Signing](./TESTFLIGHT.md#code-signing) - Required for App Store and DMG distribution
 - [Windows Code Signing](https://v2.tauri.app/distribute/sign/windows/) - Required for Microsoft Store
 - [Linux Code Signing](https://v2.tauri.app/distribute/sign/linux/) - Optional but recommended
-- [Android Code Signing](./MOBILE_SETUP.md#android-build-setup) - Required for Google Play
-- [iOS Code Signing](./TESTFLIGHT_SETUP.md#app-store-connect-api-recommended) - Required for App Store
+- [Android Code Signing](./MOBILE.md#android-build-setup) - Required for Google Play
+- [iOS Code Signing](./TESTFLIGHT.md#app-store-connect-api-recommended) - Required for App Store
 
 ## 🪟 Windows Distribution
 
@@ -131,7 +131,7 @@ npm run tauri:build:macos
 
 To distribute via macOS App Store:
 
-1. Create App Store Connect API key (see [TESTFLIGHT_SETUP.md](./TESTFLIGHT_SETUP.md))
+1. Create App Store Connect API key (see [TESTFLIGHT.md](./TESTFLIGHT.md))
 2. Configure code signing
 3. Build with App Store configuration
 4. Upload via App Store Connect or GitHub Actions
@@ -211,7 +211,7 @@ npm run tauri:android:build
 **Distribution Steps**:
 
 1. **Create Google Play Developer Account** ($25 one-time fee)
-2. **Configure Signing**: Set up keystore (see [MOBILE_SETUP.md](./MOBILE_SETUP.md))
+2. **Configure Signing**: Set up keystore (see [MOBILE.md](./MOBILE.md))
 3. **Build Release AAB**: `npm run tauri:android:build`
 4. **Upload to Play Console**: Use Google Play Console to upload AAB
 5. **Complete Store Listing**: Add screenshots, description, etc.
@@ -246,7 +246,7 @@ For distribution outside Google Play:
 npm run tauri:ios:build
 
 # Or use GitHub Actions (no Mac needed!)
-# See CI_CD_SETUP.md
+# See CI_CD.md
 ```
 
 **Output**: `src-tauri/ios/build/*.ipa`
@@ -254,7 +254,7 @@ npm run tauri:ios:build
 **Distribution Steps**:
 
 1. **Create Apple Developer Account** ($99/year)
-2. **Configure App Store Connect API** (see [TESTFLIGHT_SETUP.md](./TESTFLIGHT_SETUP.md))
+2. **Configure App Store Connect API** (see [TESTFLIGHT.md](./TESTFLIGHT.md))
 3. **Build IPA**: Via GitHub Actions or local macOS
 4. **Upload to App Store Connect**: Automatic via GitHub Actions or manually
 5. **Submit for Review**: Via App Store Connect
@@ -269,7 +269,7 @@ See: [Tauri App Store Guide](https://v2.tauri.app/distribute/app-store/)
 
 ### TestFlight Distribution
 
-TestFlight is automatically configured via GitHub Actions. See [TESTFLIGHT_SETUP.md](./TESTFLIGHT_SETUP.md) for details.
+TestFlight is automatically configured via GitHub Actions. See [TESTFLIGHT.md](./TESTFLIGHT.md) for details.
 
 ## ☁️ Cloud Distribution Services
 
@@ -374,9 +374,9 @@ npm run tauri:bundle:linux
 
 - [Tauri Distribution Documentation](https://tauri.app/distribute/)
 - [Tauri Signing Guide](https://v2.tauri.app/distribute/sign/)
-- [App Store Distribution](./TESTFLIGHT_SETUP.md)
-- [Mobile Setup](./MOBILE_SETUP.md)
-- [CI/CD Setup](./CI_CD_SETUP.md)
+- [App Store Distribution](./TESTFLIGHT.md)
+- [Mobile Setup](./MOBILE.md)
+- [CI/CD Setup](./CI_CD.md)
 
 ---
 

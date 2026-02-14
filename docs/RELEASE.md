@@ -237,7 +237,7 @@ Release notes support Markdown:
 
 ## 📚 Related Documentation
 
-- [Auto-Update Setup](./AUTO_UPDATE_SETUP.md) - Configure auto-updates
+- [Auto-Update Setup](./AUTO_UPDATES.md) - Configure auto-updates
 - [Distribution Guide](./DISTRIBUTION.md) - Distribution options
 - [Tauri Updater Docs](https://v2.tauri.app/plugin/updater/) - Official Tauri updater documentation
 

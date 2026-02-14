@@ -34,9 +34,9 @@ The cross-platform framework template has been successfully implemented. This pr
   - fsm
 
 ### 4. Documentation ✅
-- `TEMPLATE_ARCHITECTURE.md` - System architecture
-- `TEMPLATE_USAGE.md` - Usage guide
-- `TEMPLATE_SUMMARY.md` - Implementation summary
+- `docs/ARCHITECTURE.md` - System architecture
+- `docs/USAGE.md` - Usage guide
+- `docs/SUMMARY.md` - Implementation summary
 - `README_TEMPLATE.md` - Template README
 
 ## Quick Start
@@ -118,8 +118,8 @@ npm run plugin:add adp
 ## Support
 
 For questions or issues:
-1. Check `TEMPLATE_USAGE.md` for usage guide
-2. Review `TEMPLATE_ARCHITECTURE.md` for architecture details
+1. Check `docs/USAGE.md` for usage guide
+2. Review `docs/ARCHITECTURE.md` for architecture details
 3. Check plugin manifests for plugin-specific documentation
 
 ---
