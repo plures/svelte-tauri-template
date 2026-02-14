@@ -48,7 +48,7 @@ async function addPlugin(pluginName) {
   if (!fs.existsSync(pluginDir)) {
     log(`❌ Error: Plugin '${pluginName}' not found`, 'red');
     log(`\nRun 'npm run plugin:list' to see available plugins`, 'cyan');
-    return;
+    process.exit(1);
   }
   
   // Validate manifest exists
@@ -56,7 +56,7 @@ async function addPlugin(pluginName) {
   if (!fs.existsSync(manifestPath)) {
     log(`❌ Error: Plugin '${pluginName}' has no manifest.json`, 'red');
     log(`The plugin directory exists but is missing required files`, 'yellow');
-    return;
+    process.exit(1);
   }
   
   // Read and validate manifest
@@ -66,7 +66,7 @@ async function addPlugin(pluginName) {
   } catch (err) {
     log(`❌ Error: Failed to parse manifest.json: ${err.message}`, 'red');
     log(`The manifest file may be corrupted or contain invalid JSON`, 'yellow');
-    return;
+    process.exit(1);
   }
   
   // Check if plugin is planned
@@ -82,7 +82,7 @@ async function addPlugin(pluginName) {
   if (!fs.existsSync(packageJsonPath)) {
     log('❌ Error: package.json not found in current directory', 'red');
     log('Make sure you are running this command from the project root', 'yellow');
-    return;
+    process.exit(1);
   }
   
   info(`Installing plugin: ${pluginName}...`);
@@ -100,6 +100,7 @@ async function addPlugin(pluginName) {
       } else {
         log(`❌ Error: Plugin install script does not export a default function`, 'red');
         log(`The install.js file exists but is not properly formatted`, 'yellow');
+        process.exit(1);
       }
     } catch (err) {
       log(`❌ Error: Failed to install plugin: ${err.message}`, 'red');
@@ -108,11 +109,13 @@ async function addPlugin(pluginName) {
         log(`\nStack trace:`, 'yellow');
         log(err.stack, 'yellow');
       }
+      process.exit(1);
     }
   } else {
     log(`❌ Error: Plugin '${pluginName}' has no install script`, 'red');
     log(`Manual installation may be required`, 'yellow');
     log(`Run 'npm run plugin:info ${pluginName}' for details`, 'cyan');
+    process.exit(1);
   }
 }
 
@@ -122,7 +125,7 @@ const pluginName = process.argv[2];
 if (!pluginName) {
   log('❌ Error: Missing plugin name', 'red');
   log('\nUsage: npm run plugin:add <plugin-name>', 'cyan');
-  log('Example: npm run plugin:add praxis', 'reset');
+  log('Example: npm run plugin:add praxis', 'dim');
   log('\nRun "npm run plugin:list" to see available plugins', 'cyan');
   process.exit(1);
 }

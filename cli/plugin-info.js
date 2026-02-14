@@ -153,8 +153,8 @@ function displayPluginInfo(pluginName) {
     log(`\n✨ Features`, 'bright');
     Object.entries(manifest.features).forEach(([feature, enabled]) => {
       if (enabled) {
-        const featureName = feature.replace(/([A-Z])/g, ' $1').trim();
-        log(`  ✓ ${featureName}`, 'green');
+        const displayFeatureName = feature.replace(/([A-Z])/g, ' $1').trim();
+        log(`  ✓ ${displayFeatureName}`, 'green');
       }
     });
   }
