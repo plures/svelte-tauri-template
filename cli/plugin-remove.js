@@ -147,7 +147,7 @@ async function removePlugin(pluginName) {
   
   // Remove config files
   if (manifest.configFiles && manifest.configFiles.length > 0) {
-    let filesRemoved = 0;
+    let removedCount = 0;
     manifest.configFiles.forEach(configFile => {
       const filePath = path.join(PROJECT_DIR, configFile);
       
@@ -161,15 +161,15 @@ async function removePlugin(pluginName) {
             fs.unlinkSync(filePath);
           }
           info(`Removed config file: ${configFile}`);
-          filesRemoved++;
+          removedCount++;
         } catch (err) {
           warning(`Failed to remove ${configFile}: ${err.message}`);
         }
       }
     });
     
-    if (filesRemoved > 0) {
-      success(`Removed ${filesRemoved} configuration file(s)`);
+    if (removedCount > 0) {
+      success(`Removed ${removedCount} configuration file(s)`);
     } else {
       warning('No configuration files found to remove');
     }
