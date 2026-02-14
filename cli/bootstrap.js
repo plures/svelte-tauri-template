@@ -259,7 +259,7 @@ target/
     log('  npm install', 'cyan');
     log('  npm run dev', 'cyan');
     log('\n📚 Documentation:', 'bright');
-    log('  See TEMPLATE_USAGE.md for more information', 'cyan');
+    log('  See docs/USAGE.md for more information', 'cyan');
     
   } catch (err) {
     error(`Bootstrap failed: ${err.message}`);

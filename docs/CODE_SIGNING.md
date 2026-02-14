@@ -246,7 +246,7 @@ jarsigner -verify -verbose -certs app-release.apk
 
 ### iOS Code Signing
 
-iOS signing is handled automatically via **App Store Connect API**. See [TESTFLIGHT_SETUP.md](./TESTFLIGHT_SETUP.md) for complete setup.
+iOS signing is handled automatically via **App Store Connect API**. See [TESTFLIGHT.md](./TESTFLIGHT.md) for complete setup.
 
 #### Quick Setup
 

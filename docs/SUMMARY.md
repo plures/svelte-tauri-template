@@ -26,8 +26,8 @@
   - fsm
 
 ### 4. Documentation
-- ✅ `TEMPLATE_ARCHITECTURE.md` - Architecture overview
-- ✅ `TEMPLATE_USAGE.md` - Usage guide
+- ✅ `ARCHITECTURE.md` - Architecture overview
+- ✅ `USAGE.md` - Usage guide
 - ✅ `README_TEMPLATE.md` - Template README
 - ✅ Plugin documentation structure
 

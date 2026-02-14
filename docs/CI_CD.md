@@ -53,7 +53,7 @@ The following workflows are ready to use:
 
 ## 📱 iOS Build Setup & TestFlight Deployment
 
-The iOS workflow is configured to automatically deploy to TestFlight! See [TESTFLIGHT_SETUP.md](./TESTFLIGHT_SETUP.md) for complete instructions.
+The iOS workflow is configured to automatically deploy to TestFlight! See [TESTFLIGHT.md](./TESTFLIGHT.md) for complete instructions.
 
 ### Quick TestFlight Setup:
 
@@ -72,7 +72,7 @@ The iOS workflow is configured to automatically deploy to TestFlight! See [TESTF
    - Or manually trigger workflow with "Deploy to TestFlight" enabled
    - Build automatically uploads to TestFlight!
 
-See [TESTFLIGHT_SETUP.md](./TESTFLIGHT_SETUP.md) for detailed instructions.
+See [TESTFLIGHT.md](./TESTFLIGHT.md) for detailed instructions.
 
 ---
 

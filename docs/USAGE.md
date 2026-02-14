@@ -193,8 +193,8 @@ After bootstrapping, your project includes:
 - `TAURI_SETUP.md` - Tauri setup guide
 - `DISTRIBUTION.md` - Distribution guide
 - `CODE_SIGNING.md` - Code signing guide
-- `MOBILE_SETUP.md` - Mobile development guide
-- `CI_CD_SETUP.md` - CI/CD setup guide
+- `MOBILE.md` - Mobile development guide
+- `CI_CD.md` - CI/CD setup guide
 
 ## Troubleshooting
 
