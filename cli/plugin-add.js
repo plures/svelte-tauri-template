@@ -44,20 +44,44 @@ function info(message) {
 async function addPlugin(pluginName) {
   const pluginDir = path.join(PLUGINS_DIR, pluginName);
   
+  // Validate plugin exists
   if (!fs.existsSync(pluginDir)) {
-    error(`Plugin '${pluginName}' not found`);
+    log(`❌ Error: Plugin '${pluginName}' not found`, 'red');
+    log(`\nRun 'npm run plugin:list' to see available plugins`, 'cyan');
+    return;
   }
   
+  // Validate manifest exists
   const manifestPath = path.join(pluginDir, 'manifest.json');
   if (!fs.existsSync(manifestPath)) {
-    error(`Plugin '${pluginName}' has no manifest.json`);
+    log(`❌ Error: Plugin '${pluginName}' has no manifest.json`, 'red');
+    log(`The plugin directory exists but is missing required files`, 'yellow');
+    return;
   }
   
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+  // Read and validate manifest
+  let manifest;
+  try {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+  } catch (err) {
+    log(`❌ Error: Failed to parse manifest.json: ${err.message}`, 'red');
+    log(`The manifest file may be corrupted or contain invalid JSON`, 'yellow');
+    return;
+  }
   
+  // Check if plugin is planned
   if (manifest.status === 'planned') {
     log(`⚠️  Plugin '${pluginName}' is planned but not yet available`, 'yellow');
     log(`   ${manifest.notes || 'This plugin will be available in a future release'}`, 'yellow');
+    log(`\nRun 'npm run plugin:info ${pluginName}' for more details`, 'cyan');
+    return;
+  }
+  
+  // Validate package.json exists in project
+  const packageJsonPath = path.join(PROJECT_DIR, 'package.json');
+  if (!fs.existsSync(packageJsonPath)) {
+    log('❌ Error: package.json not found in current directory', 'red');
+    log('Make sure you are running this command from the project root', 'yellow');
     return;
   }
   
@@ -72,14 +96,23 @@ async function addPlugin(pluginName) {
         await install(PROJECT_DIR);
         success(`Plugin '${pluginName}' installed successfully`);
         info('Run "npm install" to install dependencies');
+        log(`\nTo see what was installed, run: npm run plugin:info ${pluginName}`, 'cyan');
       } else {
-        error(`Plugin install script does not export a default function`);
+        log(`❌ Error: Plugin install script does not export a default function`, 'red');
+        log(`The install.js file exists but is not properly formatted`, 'yellow');
       }
     } catch (err) {
-      error(`Failed to install plugin: ${err.message}`);
+      log(`❌ Error: Failed to install plugin: ${err.message}`, 'red');
+      log(`\nTry running: npm run plugin:info ${pluginName} to verify plugin structure`, 'cyan');
+      if (err.stack) {
+        log(`\nStack trace:`, 'yellow');
+        log(err.stack, 'yellow');
+      }
     }
   } else {
-    error(`Plugin '${pluginName}' has no install script`);
+    log(`❌ Error: Plugin '${pluginName}' has no install script`, 'red');
+    log(`Manual installation may be required`, 'yellow');
+    log(`Run 'npm run plugin:info ${pluginName}' for details`, 'cyan');
   }
 }
 
@@ -87,7 +120,11 @@ async function addPlugin(pluginName) {
 const pluginName = process.argv[2];
 
 if (!pluginName) {
-  error('Usage: node cli/plugin-add.js <plugin-name>');
+  log('❌ Error: Missing plugin name', 'red');
+  log('\nUsage: npm run plugin:add <plugin-name>', 'cyan');
+  log('Example: npm run plugin:add praxis', 'reset');
+  log('\nRun "npm run plugin:list" to see available plugins', 'cyan');
+  process.exit(1);
 }
 
 addPlugin(pluginName);
