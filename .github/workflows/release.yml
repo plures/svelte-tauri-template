@@ -32,6 +32,11 @@ on:
       - '.github/workflows/desktop-build.yml'
       - 'docs/**'
 
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
 jobs:
   prepare-release:
     name: Prepare Release
