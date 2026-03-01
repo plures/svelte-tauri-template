@@ -34,6 +34,8 @@ jobs:
   build-windows:
     name: Build Windows
     runs-on: windows-latest
+    permissions:
+      contents: read
     if: github.event.inputs.platform == 'windows' || github.event.inputs.platform == 'all' || github.event_name != 'workflow_dispatch'
     
     steps:
@@ -79,6 +81,8 @@ jobs:
   build-macos:
     name: Build macOS
     runs-on: macos-latest
+    permissions:
+      contents: read
     if: github.event.inputs.platform == 'macos' || github.event.inputs.platform == 'all' || github.event_name != 'workflow_dispatch'
     
     steps:
@@ -130,6 +134,8 @@ jobs:
   build-linux:
     name: Build Linux
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     if: github.event.inputs.platform == 'linux' || github.event.inputs.platform == 'all' || github.event_name != 'workflow_dispatch'
     
     steps:
