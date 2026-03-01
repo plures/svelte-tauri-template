@@ -34,8 +34,6 @@ on:
 
 permissions:
   contents: write
-  packages: write
-  id-token: write
 
 jobs:
   prepare-release:
@@ -43,7 +41,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     
     outputs:
       version: ${{ steps.bump.outputs.version }}
@@ -766,7 +763,7 @@ jobs:
     needs: [prepare-release, build-and-release]
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     if: always() && (needs.prepare-release.result == 'success')
     
     steps:
