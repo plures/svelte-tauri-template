@@ -36,6 +36,8 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
+    env:
+      HAS_WINDOWS_CERT: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE != '' }}
     if: github.event.inputs.platform == 'windows' || github.event.inputs.platform == 'all' || github.event_name != 'workflow_dispatch'
     
     steps:
@@ -58,7 +60,7 @@ jobs:
         run: npm run tauri:build:windows
 
       - name: Sign Windows MSI
-        if: github.event.inputs.build_type == 'release' && secrets.WINDOWS_SIGNING_CERTIFICATE != ''
+        if: github.event.inputs.build_type == 'release' && env.HAS_WINDOWS_CERT == 'true'
         env:
           WINDOWS_SIGNING_CERTIFICATE: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE }}
           WINDOWS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
@@ -83,6 +85,8 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: read
+    env:
+      HAS_APPLE_CERT: ${{ secrets.APPLE_SIGNING_IDENTITY != '' }}
     if: github.event.inputs.platform == 'macos' || github.event.inputs.platform == 'all' || github.event_name != 'workflow_dispatch'
     
     steps:
@@ -105,7 +109,7 @@ jobs:
         run: npm run tauri:build:macos
 
       - name: Sign and Notarize macOS
-        if: github.event.inputs.build_type == 'release' && secrets.APPLE_SIGNING_IDENTITY != ''
+        if: github.event.inputs.build_type == 'release' && env.HAS_APPLE_CERT == 'true'
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -136,6 +140,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      HAS_GPG_KEY: ${{ secrets.GPG_KEY_ID != '' }}
     if: github.event.inputs.platform == 'linux' || github.event.inputs.platform == 'all' || github.event_name != 'workflow_dispatch'
     
     steps:
@@ -163,7 +169,7 @@ jobs:
         run: npm run tauri:build:linux
 
       - name: Sign Linux Packages
-        if: github.event.inputs.build_type == 'release' && secrets.GPG_KEY_ID != ''
+        if: github.event.inputs.build_type == 'release' && env.HAS_GPG_KEY == 'true'
         env:
           GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
