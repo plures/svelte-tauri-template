@@ -152,3 +152,17 @@ Point to the real Tauri schema, not a custom one:
 ```jsonc
 { "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-cli/schema.json" }
 ```
+
+### ❌ Don't externalize `@tauri-apps/*` in Vite
+Tauri APIs are **regular npm packages** that Vite must bundle. Do NOT add them to `rollupOptions.external` or `optimizeDeps.exclude`. The webview is a browser — it cannot resolve bare module specifiers at runtime.
+
+```typescript
+// WRONG — causes "Failed to resolve module specifier" at runtime
+build: {
+  rollupOptions: {
+    external: (id) => id.startsWith('@tauri-apps/')
+  }
+}
+
+// CORRECT — just don't mention them. Let Vite bundle normally.
+```
