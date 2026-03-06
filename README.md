@@ -63,6 +63,7 @@ Comprehensive documentation is available in the [docs/](./docs/) directory:
 - **[Architecture](./docs/ARCHITECTURE.md)** - System design and structure
 - **[Setup & Configuration](./docs/README.md#-setup--configuration)** - Tauri, mobile, and CI/CD setup
 - **[Distribution](./docs/README.md#-distribution--release)** - Release and distribution guides
+- **[Gotchas & Lessons Learned](./docs/GOTCHAS.md)** - Tauri 2 + Svelte 5 pitfalls to avoid
 
 👉 **[View all documentation](./docs/README.md)**
 
