@@ -166,3 +166,24 @@ build: {
 
 // CORRECT — just don't mention them. Let Vite bundle normally.
 ```
+
+### ❌ CSP blocks Tauri IPC
+If you set a custom CSP, you **must** include Tauri's IPC origins in `connect-src`:
+
+```
+connect-src 'self' ipc: http://ipc.localhost ...
+```
+
+Without these, all `invoke()` calls, window controls, and plugin commands fail silently or with "violates Content Security Policy."
+
+### ❌ Window and path commands need ACL permissions
+Tauri v2 blocks everything by default. If you use custom titlebar controls or `appDataDir()`, add to `capabilities/default.json`:
+
+```jsonc
+"core:window:default",
+"core:window:allow-is-maximized",
+"core:window:allow-minimize",
+"core:window:allow-toggle-maximize",
+"core:window:allow-close",
+"core:path:default"
+```
