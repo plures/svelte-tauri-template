@@ -34,6 +34,8 @@ on:
 
 permissions:
   contents: write
+  packages: write
+  id-token: write
 
 jobs:
   prepare-release:
@@ -41,6 +43,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+  packages: write
+  id-token: write
     
     outputs:
       version: ${{ steps.bump.outputs.version }}
@@ -324,6 +328,8 @@ jobs:
     
     permissions:
       contents: write
+  packages: write
+  id-token: write
     
     steps:
       - name: Checkout repository
@@ -764,6 +770,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+  packages: write
+  id-token: write
     if: always() && (needs.prepare-release.result == 'success')
     
     steps:
