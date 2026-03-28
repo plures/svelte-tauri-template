@@ -44,6 +44,7 @@ npm run dev
 
 - **adp** (Required): Architectural Discipline Package
 - **praxis**: The Full Plures Application Framework - declarative schemas, logic engine, component generation, and local-first data
+- **svelte-ratatui**: TUI rendering — render Svelte components in the terminal via Ratatui
 - **state-docs** (Planned): State documentation generation
 - **pluresdb** (Planned): Database integration
 - **unum** (Planned): Numeric computation library
@@ -54,6 +55,33 @@ npm run dev
 ```bash
 npm run plugin:list
 ```
+
+## 🖥️ TUI Mode
+
+The `svelte-ratatui` plugin lets you render Svelte components in the terminal using [Ratatui](https://ratatui.rs/).
+
+### Add the plugin
+
+```bash
+npm run plugin:add svelte-ratatui
+npm install
+```
+
+### Run in terminal mode
+
+```bash
+npm run tui:dev
+```
+
+### Run in GUI mode (default)
+
+```bash
+npm run tauri:dev
+```
+
+### Custom widget mappings
+
+Edit `tui.config.ts` in your project root to map Svelte components to Ratatui widgets. See [`plugins/svelte-ratatui/README.md`](./plugins/svelte-ratatui/README.md) for details.
 
 ## 📚 Documentation
 
@@ -83,6 +111,7 @@ This template is designed to integrate with:
 
 - ✅ **plures/ADP** - Architectural Discipline Package (integrated)
 - ✅ **plures/praxis** - Application logic engine (integrated)
+- ✅ **plures/svelte-ratatui** - TUI rendering for Svelte (integrated)
 - 🔜 **plures/State-docs** - State documentation
 - 🔜 **plures/pluresdb** - Database system
 - 🔜 **plures/unum** - Numeric computation
