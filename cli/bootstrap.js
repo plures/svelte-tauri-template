@@ -4,6 +4,10 @@
  * Bootstrap CLI - Create new projects from template
  * 
  * Usage: node cli/bootstrap.js <project-name> [options]
+ * 
+ * Options:
+ *   --with-tui      Include svelte-ratatui TUI plugin (default: enabled)
+ *   --no-tui        Exclude svelte-ratatui TUI plugin
  */
 
 import fs from 'fs';
@@ -101,29 +105,39 @@ async function collectProjectInfo(placeholders) {
   return info;
 }
 
-async function selectPlugins(manifest) {
+async function selectPlugins(manifest, includeTui) {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
   });
 
   const selectedPlugins = [...manifest.plugins.required];
+
+  // Auto-include svelte-ratatui when --with-tui (default behaviour)
+  if (includeTui && manifest.plugins.optional.includes('svelte-ratatui')) {
+    selectedPlugins.push('svelte-ratatui');
+    info('Including svelte-ratatui plugin (use --no-tui to exclude)');
+  }
   
   if (manifest.plugins.optional.length > 0) {
     log('\n🔌 Available Plugins', 'bright');
     log('='.repeat(50), 'cyan');
     
-    manifest.plugins.optional.forEach((plugin, index) => {
+    const remaining = manifest.plugins.optional.filter(
+      p => !selectedPlugins.includes(p)
+    );
+
+    remaining.forEach((plugin, index) => {
       log(`${index + 1}. ${plugin}`, 'yellow');
     });
     
-    const answer = await question(rl, '\nSelect plugins to include (comma-separated numbers, or press Enter for none): ');
+    const answer = await question(rl, '\nSelect additional plugins to include (comma-separated numbers, or press Enter for none): ');
     
     if (answer.trim()) {
       const indices = answer.split(',').map(n => parseInt(n.trim()) - 1);
       indices.forEach(index => {
-        if (index >= 0 && index < manifest.plugins.optional.length) {
-          selectedPlugins.push(manifest.plugins.optional[index]);
+        if (index >= 0 && index < remaining.length) {
+          selectedPlugins.push(remaining[index]);
         }
       });
     }
@@ -194,7 +208,7 @@ async function installPlugins(projectDir, plugins) {
   }
 }
 
-async function bootstrap(projectName) {
+async function bootstrap(projectName, includeTui) {
   try {
     log('\n🚀 Bootstrap New Project', 'bright');
     log('='.repeat(50), 'cyan');
@@ -206,7 +220,7 @@ async function bootstrap(projectName) {
     const projectInfo = await collectProjectInfo(placeholders);
     
     // Select plugins
-    const selectedPlugins = await selectPlugins(manifest);
+    const selectedPlugins = await selectPlugins(manifest, includeTui);
     
     // Prepare placeholders
     const allPlaceholders = {
@@ -268,11 +282,13 @@ target/
 }
 
 // Main execution
-const projectName = process.argv[2];
+const args = process.argv.slice(2);
+const projectName = args.find(a => !a.startsWith('--'));
+const includeTui = !args.includes('--no-tui');
 
 if (!projectName) {
-  error('Usage: node cli/bootstrap.js <project-name>');
+  error('Usage: node cli/bootstrap.js <project-name> [--with-tui|--no-tui]');
 }
 
-bootstrap(projectName);
+bootstrap(projectName, includeTui);
 

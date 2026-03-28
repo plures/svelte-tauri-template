@@ -1,0 +1,33 @@
+{
+  "name": "svelte-ratatui",
+  "version": "0.1.0",
+  "description": "TUI rendering capability for Svelte apps using svelte-ratatui — render Svelte components in the terminal via Ratatui",
+  "author": "Plures",
+  "dependencies": {
+    "dev": [
+      "@plures/svelte-ratatui-compiler"
+    ],
+    "prod": [
+      "@plures/svelte-ratatui"
+    ]
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
+  },
+  "tauriDependencies": {
+    "tauri-plugin-tui": "0.1.0"
+  },
+  "configFiles": [
+    "tui.config.ts"
+  ],
+  "scripts": {
+    "tui:dev": "TAURI_TUI=1 tauri dev",
+    "tui:build": "TAURI_TUI=1 tauri build"
+  },
+  "features": {
+    "terminalRendering": true,
+    "widgetMappings": true,
+    "dualMode": true,
+    "svelteIntegration": true
+  }
+}
