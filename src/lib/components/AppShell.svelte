@@ -27,7 +27,37 @@
 
 	function onSidebarHandleMove(e: PointerEvent) {
 		if (!resizingSidebar) return;
-		const activityBarWidth = 48;
+
+		let activityBarWidth = 0;
+
+		// Prefer CSS custom property if available (e.g., --activity-bar-width).
+		if (typeof document !== 'undefined') {
+			const rootStyle = getComputedStyle(document.documentElement);
+			const cssValue = rootStyle.getPropertyValue('--activity-bar-width').trim();
+
+			if (cssValue) {
+				const parsed = parseFloat(cssValue);
+				if (!Number.isNaN(parsed) && parsed > 0) {
+					activityBarWidth = parsed;
+				}
+			}
+
+			// Fallback to measuring the activity bar element if CSS var is not usable.
+			if (activityBarWidth === 0) {
+				const activityBarElement = document.querySelector<HTMLElement>('[data-role="activity-bar"]');
+				if (activityBarElement) {
+					const rect = activityBarElement.getBoundingClientRect();
+					if (rect.width > 0) {
+						activityBarWidth = rect.width;
+					}
+				}
+			}
+		}
+
+		// Final fallback to the original hard-coded value to preserve existing behavior.
+		if (activityBarWidth === 0) {
+			activityBarWidth = 48;
+		}
 		sidebarWidth = Math.max(120, Math.min(480, e.clientX - activityBarWidth));
 	}
 
@@ -38,8 +68,23 @@
 
 	function onPanelHandleMove(e: PointerEvent) {
 		if (!resizingPanel) return;
-		const statusBarHeight = 24;
-		panelHeight = Math.max(80, Math.min(600, window.innerHeight - e.clientY - statusBarHeight));
+
+		// Use the document root as a proxy for the app shell container.
+		const root = document.documentElement;
+		const rootRect = root.getBoundingClientRect();
+
+		// Prefer CSS custom property for status bar height, fall back to 24px for backwards compatibility.
+		const statusBarVar = getComputedStyle(root).getPropertyValue('--status-bar-height').trim();
+		const parsedStatusBarHeight = statusBarVar ? parseFloat(statusBarVar) : NaN;
+		const statusBarHeight = Number.isFinite(parsedStatusBarHeight) ? parsedStatusBarHeight : 24;
+
+		// Distance from the pointer to the bottom of the container.
+		const distanceFromPointerToBottom = rootRect.bottom - e.clientY;
+
+		panelHeight = Math.max(
+			80,
+			Math.min(600, distanceFromPointerToBottom - statusBarHeight)
+		);
 	}
 
 	function stopResize() {
@@ -122,8 +167,25 @@
 					onpointerup={stopResize}
 					onpointercancel={stopResize}
 					onkeydown={(e) => {
-						if (e.key === 'ArrowRight') sidebarWidth = Math.min(480, sidebarWidth + 10);
-						if (e.key === 'ArrowLeft') sidebarWidth = Math.max(120, sidebarWidth - 10);
+						let handled = false;
+
+						if (e.key === 'ArrowRight') {
+							sidebarWidth = Math.min(480, sidebarWidth + 10);
+							handled = true;
+						} else if (e.key === 'ArrowLeft') {
+							sidebarWidth = Math.max(120, sidebarWidth - 10);
+							handled = true;
+						} else if (e.key === 'Home') {
+							sidebarWidth = 120;
+							handled = true;
+						} else if (e.key === 'End') {
+							sidebarWidth = 480;
+							handled = true;
+						}
+
+						if (handled) {
+							e.preventDefault();
+						}
 					}}
 				></div>
 			</aside>
