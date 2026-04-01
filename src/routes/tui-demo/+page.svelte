@@ -2,15 +2,15 @@
 	import TuiDemo from '$lib/components/TuiDemo.svelte';
 </script>
 
-<main>
+<div class="page">
 	<TuiDemo />
 	<p class="back-link">
 		<a href="/">← Back to home</a>
 	</p>
-</main>
+</div>
 
 <style>
-	main {
+	.page {
 		padding: 2rem;
 	}
 
@@ -20,7 +20,7 @@
 	}
 
 	a {
-		color: #ff3e00;
+		color: var(--accent);
 		text-decoration: none;
 	}
 
