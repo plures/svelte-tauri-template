@@ -1,3 +1,8 @@
+## [0.3.1] — 2026-05-11
+
+- refactor: replace inline lifecycle with reusable workflow call (789a141)
+- docs: refresh ROADMAP.md with OASIS strategic alignment (6c72437)
+
 ## [0.3.0] — 2026-04-23
 
 - feat: add render-mode utility for tri-mode rendering (GUI/TUI CSS/TUI native) (ac61985)
