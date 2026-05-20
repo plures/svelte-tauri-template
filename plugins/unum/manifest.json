@@ -1,19 +1,22 @@
 {
   "name": "unum",
-  "version": "0.0.0",
-  "description": "unum numeric computation library integration",
+  "version": "3.0.0",
+  "description": "Unum reactive PluresDB bindings — now a thin wrapper over @plures/pluresdb. Reactive state and Svelte runes are built into the WASM layer.",
   "author": "Plures",
-  "status": "planned",
+  "status": "active",
   "dependencies": {
     "dev": [],
-    "prod": []
+    "prod": ["@plures/pluresdb"]
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
   },
   "configFiles": [],
   "scripts": {},
   "features": {
-    "numericComputation": true,
-    "precision": true
+    "reactiveBindings": true,
+    "svelteRunes": true,
+    "p2pSync": false
   },
-  "notes": "This plugin will be available when plures/unum is released"
+  "notes": "Reactive PluresDB bindings (state_watch, Svelte stores) now live in the pluresdb-wasm layer. This plugin provides backward-compatible @plures/unum APIs."
 }
-

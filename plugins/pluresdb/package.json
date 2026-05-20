@@ -1,0 +1,49 @@
+{
+  "name": "@plures/pluresdb",
+  "version": "3.0.0",
+  "description": "PluresDB Application Runtime — CRDT store, reactive procedures, .px language, Chronos timeline",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./px": {
+      "types": "./dist/px.d.ts",
+      "import": "./dist/px.js"
+    },
+    "./chronos": {
+      "types": "./dist/chronos.d.ts",
+      "import": "./dist/chronos.js"
+    },
+    "./store": {
+      "types": "./dist/store.d.ts",
+      "import": "./dist/store.js"
+    }
+  },
+  "files": ["dist", "src", "README.md"],
+  "scripts": {
+    "build": "tsup src/index.ts src/px.ts src/chronos.ts src/store.ts --format esm --dts",
+    "build:wasm": "cd ../../../pluresdb && wasm-pack build crates/pluresdb-wasm --target web --out-dir ../../packages/pluresdb-wasm",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@plures/pluresdb-wasm": "^3.0.0"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "svelte": {
+      "optional": true
+    }
+  },
+  "keywords": ["pluresdb", "crdt", "reactive", "praxis", "chronos", "px", "local-first"],
+  "license": "BSL-1.1 OR MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/plures/pluresdb"
+  }
+}

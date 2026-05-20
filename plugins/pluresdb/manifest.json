@@ -1,20 +1,35 @@
 {
   "name": "pluresdb",
-  "version": "0.0.0",
-  "description": "pluresdb database integration plugin",
+  "version": "3.0.0",
+  "description": "PluresDB Application Runtime — one plugin delivers CRDT store, reactive procedures, .px language, Chronos timeline, and P2P sync",
   "author": "Plures",
-  "status": "planned",
+  "status": "active",
   "dependencies": {
-    "dev": [],
-    "prod": []
+    "dev": ["@plures/pluresdb-wasm"],
+    "prod": ["@plures/pluresdb-wasm"]
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
   },
   "configFiles": [],
-  "scripts": {},
-  "features": {
-    "database": true,
-    "migrations": true,
-    "queryBuilder": true
+  "scripts": {
+    "build:wasm": "wasm-pack build --target web ../../../pluresdb/crates/pluresdb-wasm"
   },
-  "notes": "This plugin will be available when plures/pluresdb is released"
+  "features": {
+    "crdtStore": true,
+    "procedures": true,
+    "px": true,
+    "chronos": true,
+    "sync": false,
+    "reactiveBindings": true,
+    "actionHandler": true
+  },
+  "exports": {
+    "store": "Core CRDT store with in-memory or IndexedDB persistence",
+    "procedures": "Query DSL, AgensRuntime, reactive event dispatch",
+    "px": ".px language: parse, compile, execute with ActionHandler",
+    "chronos": "State timeline, causal chains, observability",
+    "createApp": "One-call bootstrap: store + chronos + px runtime wired together"
+  },
+  "notes": "Replaces separate praxis, chronos, and unum plugins. All capabilities consolidated into one dependency backed by Rust WASM."
 }
-
