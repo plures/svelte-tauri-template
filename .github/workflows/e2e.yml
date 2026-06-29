@@ -10,7 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    timeout-minutes: 30
+    timeout-minutes: 20
+    env:
+      DEBIAN_FRONTEND: noninteractive
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,12 +27,17 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
-      - name: Install Playwright browsers (chromium only)
-        if: steps.pw-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-      - name: Install Playwright OS deps (cache hit)
-        if: steps.pw-cache.outputs.cache-hit == 'true'
+      # OS-level deps (apt) are installed separately and bounded so a stalled
+      # apt mirror fails this step fast instead of silently hanging the whole
+      # job until the timeout. Never use `playwright install --with-deps`: the
+      # apt portion of that combined command is the historical hang source.
+      - name: Install Playwright OS dependencies
+        timeout-minutes: 8
         run: npx playwright install-deps chromium
+      - name: Install Playwright browser (chromium)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 5
+        run: npx playwright install chromium
       - name: Run E2E
         run: npm run test:e2e
       - name: Upload Playwright report (always)
