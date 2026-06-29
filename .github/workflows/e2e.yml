@@ -8,8 +8,16 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    # Run inside the official Playwright image: browsers + all OS deps are
+    # pre-baked. This removes the entire setup-failure class we hit on the
+    # bare runner (apt `--with-deps` hang, then post-download extract hang in
+    # `playwright install`). Keep the tag pinned to the @playwright/test
+    # version in package-lock.json (1.58.1) so the baked browser matches.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.1-noble
     permissions:
       contents: read
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,8 +26,6 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
       - name: Run E2E
         run: npm run test:e2e
       - name: Upload Playwright report (always)

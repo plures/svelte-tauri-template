@@ -2,14 +2,35 @@
 	import AppShell from '$lib/components/AppShell.svelte';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
+	import { detectRenderMode, renderModeClass, tuiCssOverrides } from '$lib/render-mode';
+	import { isTauri, on } from '$lib/platform/tauri';
+	import { onMount } from 'svelte';
 
 	interface Props {
 		children: Snippet;
 	}
 
 	let { children }: Props = $props();
+
+	// Render mode is built-in and default-on: gui | tui-css | tui-native.
+	const mode = detectRenderMode();
+
+	onMount(() => {
+		if (!isTauri()) return;
+		let un: (() => void) | undefined;
+		on('app-booted', () => {}).then((u) => (un = u));
+		return () => un?.();
+	});
 </script>
 
+<svelte:head>
+	{#if mode === 'tui-css'}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html `<style>${tuiCssOverrides}</style>`}
+	{/if}
+</svelte:head>
+
+<div class={renderModeClass(mode)} style="display:contents">
 <AppShell>
 	{#snippet activityBar()}
 		<button
@@ -62,6 +83,7 @@
 
 	{@render children()}
 </AppShell>
+</div>
 
 <style>
 	.activity-icon {

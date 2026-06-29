@@ -1,14 +1,11 @@
 name: Build Android App
 
+# Mobile builds are RELEASE artifacts, not foundation PR gates. They require paid
+# signing infrastructure (see docs/INFRA-DEBT.md) and are intentionally NOT run on
+# pull_request/push-to-main. Foundation gates are desktop + e2e + MCP + ui-compliance.
 on:
   push:
-    branches: [ main, develop ]
-    paths:
-      - 'src/**'
-      - 'src-tauri/**'
-      - '.github/workflows/android-build.yml'
-  pull_request:
-    branches: [ main ]
+    tags: [ 'v*' ]
   workflow_dispatch:
     inputs:
       build_type:
@@ -75,7 +72,7 @@ jobs:
           echo "$ANDROID_HOME/tools" >> $GITHUB_PATH
 
       - name: Build Android App (Dev)
-        if: github.event.inputs.build_type == 'dev' || github.event_name == 'push' || github.event_name == 'pull_request'
+        if: github.event.inputs.build_type == 'dev' || github.event_name == 'workflow_dispatch'
         run: |
           npx tauri android dev || echo "Dev build completed"
 

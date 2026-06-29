@@ -1,0 +1,19 @@
+{
+  "name": "@plures/mcp-dev-server",
+  "version": "0.3.1",
+  "private": true,
+  "type": "module",
+  "description": "Built-in MCP dev server (stdio JSON-RPC) for svelte-tauri apps",
+  "bin": {
+    "mcp-dev-server": "src/server.ts"
+  },
+  "scripts": {
+    "mcp": "tsx src/server.ts",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.9"
+  }
+}
