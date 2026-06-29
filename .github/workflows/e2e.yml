@@ -8,11 +8,16 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    # Run inside the official Playwright image: browsers + all OS deps are
+    # pre-baked. This removes the entire setup-failure class we hit on the
+    # bare runner (apt `--with-deps` hang, then post-download extract hang in
+    # `playwright install`). Keep the tag pinned to the @playwright/test
+    # version in package-lock.json (1.58.1) so the baked browser matches.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.1-noble
     permissions:
       contents: read
     timeout-minutes: 20
-    env:
-      DEBIAN_FRONTEND: noninteractive
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,23 +26,6 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: Cache Playwright browsers
-        id: pw-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
-      # OS-level deps (apt) are installed separately and bounded so a stalled
-      # apt mirror fails this step fast instead of silently hanging the whole
-      # job until the timeout. Never use `playwright install --with-deps`: the
-      # apt portion of that combined command is the historical hang source.
-      - name: Install Playwright OS dependencies
-        timeout-minutes: 8
-        run: npx playwright install-deps chromium
-      - name: Install Playwright browser (chromium)
-        if: steps.pw-cache.outputs.cache-hit != 'true'
-        timeout-minutes: 5
-        run: npx playwright install chromium
       - name: Run E2E
         run: npm run test:e2e
       - name: Upload Playwright report (always)
