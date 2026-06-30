@@ -1,23 +1,18 @@
 {
   "name": "praxis",
-  "version": "1.2.11",
-  "description": "The Full Plures Application Framework - declarative schemas, logic engine, component generation, and local-first data",
+  "version": "3.0.0",
+  "description": "Praxis logic engine — now a thin wrapper over @plures/pluresdb. The .px runtime and constraint engine live in PluresDB.",
   "author": "Plures",
+  "status": "active",
   "dependencies": {
     "dev": [],
-    "prod": [
-      "@plures/praxis"
-    ]
+    "prod": ["@plures/pluresdb"]
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
   },
   "configFiles": [],
-  "scripts": {
-    "praxis": "praxis",
-    "praxis:generate": "praxis generate",
-    "praxis:validate": "praxis validate"
-  },
+  "scripts": {},
   "features": {
     "declarativeSchemas": true,
     "logicEngine": true,
@@ -25,5 +20,6 @@
     "localFirstData": true,
     "svelteIntegration": true,
     "visualDevelopment": true
-  }
+  },
+  "notes": "All core logic (parser, compiler, executor, constraints) now lives in pluresdb-px. This plugin provides Svelte-specific convenience wrappers and backward compatibility with @plures/praxis APIs."
 }
