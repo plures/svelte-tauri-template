@@ -1,6 +1,6 @@
 {
   "name": "@plures/mcp-dev-server",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "Built-in MCP dev server (stdio JSON-RPC) for svelte-tauri apps",

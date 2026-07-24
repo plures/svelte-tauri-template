@@ -1,3 +1,12 @@
+## [0.4.0] — 2026-07-24
+
+- ci(release): trigger release pipeline on merge to main (#26) (9d256df)
+- ci: migrate Tech Doc Writer to shared reusable (8bca603)
+- ci: add security-aware Dependabot auto-merge workflow (org backfill) (4992084)
+- feat: pluresdb plugin delivers full application runtime (#24) (11fcb4a)
+- feat: built-in GUI/TUI/MCP foundation (stage 1) (#25) (04736d3)
+- ci: change release trigger from push-to-main to tag-only (8d28264)
+
 ## [0.3.1] — 2026-05-11
 
 - refactor: replace inline lifecycle with reusable workflow call (789a141)
