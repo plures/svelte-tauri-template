@@ -8,60 +8,23 @@
 
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import {
+  log, logError,
+  validateAndLoadPlugin, requirePluginArg
+} from './plugin-utils.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+function displayPluginInfo(rawName) {
+  const __dirname = path.dirname(new URL(import.meta.url).pathname);
+  const PLUGINS_DIR = path.join(__dirname, '../plugins');
 
-const PLUGINS_DIR = path.join(__dirname, '../plugins');
-
-const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  red: '\x1b[31m',
-  cyan: '\x1b[36m',
-  blue: '\x1b[34m'
-};
-
-function log(message, color = 'reset') {
-  console.log(`${colors[color]}${message}${colors.reset}`);
-}
-
-function error(message) {
-  log(`❌ Error: ${message}`, 'red');
-  process.exit(1);
-}
-
-function displayPluginInfo(pluginName) {
-  const pluginDir = path.join(PLUGINS_DIR, pluginName);
-  
-  // Validate plugin exists
-  if (!fs.existsSync(pluginDir)) {
-    log(`❌ Error: Plugin '${pluginName}' not found`, 'red');
+  const result = validateAndLoadPlugin(PLUGINS_DIR, rawName);
+  if (!result.ok) {
+    logError(result.reason);
     log(`\nRun 'npm run plugin:list' to see available plugins`, 'cyan');
     process.exit(1);
   }
-  
-  // Validate manifest exists
-  const manifestPath = path.join(pluginDir, 'manifest.json');
-  if (!fs.existsSync(manifestPath)) {
-    log(`❌ Error: Plugin '${pluginName}' has no manifest.json`, 'red');
-    log(`The plugin directory exists but is missing required files`, 'yellow');
-    process.exit(1);
-  }
-  
-  // Read and parse manifest
-  let manifest;
-  try {
-    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-  } catch (err) {
-    log(`❌ Error: Failed to parse manifest.json: ${err.message}`, 'red');
-    log(`The manifest file may be corrupted or contain invalid JSON`, 'yellow');
-    process.exit(1);
-  }
+
+  const { pluginDir, manifest, name: pluginName } = result;
   
   // Display header
   log('\n' + '='.repeat(60), 'cyan');
@@ -179,14 +142,5 @@ function displayPluginInfo(pluginName) {
 }
 
 // Main execution
-const pluginName = process.argv[2];
-
-if (!pluginName) {
-  log('❌ Error: Missing plugin name', 'red');
-  log('\nUsage: npm run plugin:info <plugin-name>', 'cyan');
-  log('Example: npm run plugin:info praxis', 'dim');
-  log('\nRun "npm run plugin:list" to see available plugins', 'cyan');
-  process.exit(1);
-}
-
-displayPluginInfo(pluginName);
+const rawName = requirePluginArg('info');
+displayPluginInfo(rawName);

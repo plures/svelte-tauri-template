@@ -40,8 +40,15 @@ function listPlugins() {
     .map(name => {
       const manifestPath = path.join(PLUGINS_DIR, name, 'manifest.json');
       if (fs.existsSync(manifestPath)) {
-        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-        return { name, ...manifest };
+        try {
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+          if (typeof manifest !== 'object' || manifest === null || Array.isArray(manifest)) {
+            return { name, status: 'invalid', notes: 'manifest.json is not a valid JSON object' };
+          }
+          return { name, ...manifest };
+        } catch {
+          return { name, status: 'invalid', notes: 'manifest.json contains invalid JSON' };
+        }
       }
       return { name, status: 'unknown' };
     });
