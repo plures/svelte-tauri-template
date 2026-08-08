@@ -8,14 +8,16 @@
 
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import {
   log, logError,
   validateAndLoadPlugin, requirePluginArg
 } from './plugin-utils.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PLUGINS_DIR = path.join(__dirname, '../plugins');
+
 function displayPluginInfo(rawName) {
-  const __dirname = path.dirname(new URL(import.meta.url).pathname);
-  const PLUGINS_DIR = path.join(__dirname, '../plugins');
 
   const result = validateAndLoadPlugin(PLUGINS_DIR, rawName);
   if (!result.ok) {
