@@ -6,7 +6,6 @@ Comprehensive documentation for the Cross-Platform Framework Template.
 
 - [**USAGE.md**](./USAGE.md) - Complete usage guide for creating projects from this template
 - [**ARCHITECTURE.md**](./ARCHITECTURE.md) - Architecture overview and design principles
-- [**SUMMARY.md**](./SUMMARY.md) - Implementation summary and feature overview
 
 ## 🔧 Setup & Configuration
 

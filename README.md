@@ -2,119 +2,113 @@
 
 An extensible template for bootstrapping cross-platform applications using **Svelte 5** and **Tauri 2**.
 
-## 🎯 Purpose
-
-This template was created to:
-- Explore creating a simple cross-platform framework using Svelte 5 and Tauri 2
-- Provide a foundation for future Plures package integrations
-- Enable rapid bootstrapping of new cross-platform projects
-- Maintain architectural discipline and code quality
-
 ## 🚀 Quick Start
 
-### Create a New Project
+### Prerequisites
+
+| Tool | Version | Install |
+|------|---------|---------|
+| **Node.js** | 20+ | [nodejs.org](https://nodejs.org/) |
+| **Rust** | stable | [rustup.rs](https://rustup.rs/) |
+| **Tauri CLI** | 2.x | Installed via `npm install` (uses `@tauri-apps/cli`) |
+| **Platform libs** | — | See [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) |
+
+### 1. Create a New Project
 
 ```bash
 npm run template:create my-new-app
 ```
 
-Follow the prompts to configure your project.
+The CLI will prompt for project name, description, package identifier, and plugins.
 
-### Start Development
+### 2. Install & Run
 
 ```bash
 cd my-new-app
 npm install
+
+# Web only (Vite dev server)
 npm run dev
+
+# Desktop app (Tauri)
+npm run tauri:dev
+```
+
+### 3. Build for Production
+
+```bash
+npm run tauri:build            # all desktop platforms
+npm run tauri:android:build    # Android
+npm run tauri:ios:build        # iOS (requires macOS)
 ```
 
 ## 📦 Features
 
-- **Cross-Platform**: Desktop (Windows, macOS, Linux), Android, and iOS
-- **Modern Stack**: Svelte 5 + Tauri 2
-- **Extensible**: Plugin system for adding features
-- **CI/CD Ready**: GitHub Actions workflows included
-- **Code Quality**: ADP integration for architectural discipline
-- **Auto-Updates**: Built-in update system
-- **Multi-Platform Builds**: Automated package generation
+- **Cross-Platform** — Desktop (Windows, macOS, Linux), Android, and iOS
+- **Modern Stack** — Svelte 5 runes + Tauri 2
+- **Plugin System** — opt-in features via `npm run plugin:add <name>`
+- **GUI + TUI** — render Svelte components in the terminal via the `svelte-ratatui` plugin
+- **CI/CD Ready** — GitHub Actions workflows for builds, releases, and code signing
+- **Auto-Updates** — built-in Tauri updater with signed manifests
 
-## 🔌 Plugin System
+## 🔌 Plugins
 
-### Available Plugins
-
-- **adp** (Required): Architectural Discipline Package
-- **praxis**: The Full Plures Application Framework - declarative schemas, logic engine, component generation, and local-first data
-- **svelte-ratatui**: TUI rendering — render Svelte components in the terminal via Ratatui
-- **state-docs** (Planned): State documentation generation
-- **pluresdb** (Planned): Database integration
-- **unum** (Planned): Numeric computation library
-- **fsm** (Planned): Finite State Machine library
-
-### List Plugins
+| Plugin | Status | Description |
+|--------|--------|-------------|
+| **adp** | Required | Architectural Discipline Package |
+| **praxis** | ✅ Integrated | Declarative schemas, logic engine, component generation, local-first data |
+| **svelte-ratatui** | ✅ Integrated | TUI rendering via [Ratatui](https://ratatui.rs/) |
+| **pluresdb** | 🔜 Planned | Distributed database with P2P sync |
+| **state-docs** | 🔜 Planned | State documentation generation |
+| **unum** | 🔜 Planned | Numeric computation library |
 
 ```bash
-npm run plugin:list
+npm run plugin:list            # show available plugins
+npm run plugin:add <name>      # add a plugin to your project
+npm run plugin:remove <name>   # remove a plugin
+npm run plugin:info <name>     # show plugin details
 ```
 
 ## 🖥️ TUI Mode
 
-The `svelte-ratatui` plugin lets you render Svelte components in the terminal using [Ratatui](https://ratatui.rs/).
-
-### Add the plugin
-
 ```bash
-npm run plugin:add svelte-ratatui
-npm install
+npm run plugin:add svelte-ratatui && npm install
+npm run tui:dev                # terminal mode
+npm run tauri:dev              # GUI mode (default)
 ```
 
-### Run in terminal mode
+Edit `tui.config.ts` to map Svelte components to Ratatui widgets. See [`plugins/svelte-ratatui/README.md`](./plugins/svelte-ratatui/README.md) for details.
 
-```bash
-npm run tui:dev
+## 🏗️ Project Structure
+
 ```
-
-### Run in GUI mode (default)
-
-```bash
-npm run tauri:dev
+├── template/           # Template files with {{placeholders}}
+├── cli/                # Bootstrap & plugin CLI tools
+├── plugins/            # Modular plugin system
+├── src/                # SvelteKit frontend source
+├── src-tauri/          # Tauri / Rust backend
+├── docs/               # Full documentation
+└── e2e/                # Playwright E2E tests
 ```
-
-### Custom widget mappings
-
-Edit `tui.config.ts` in your project root to map Svelte components to Ratatui widgets. See [`plugins/svelte-ratatui/README.md`](./plugins/svelte-ratatui/README.md) for details.
 
 ## 📚 Documentation
 
-Comprehensive documentation is available in the [docs/](./docs/) directory:
+| Guide | Description |
+|-------|-------------|
+| [Usage Guide](./docs/USAGE.md) | Create projects, add plugins, template variables |
+| [Architecture](./docs/ARCHITECTURE.md) | System design, plugin lifecycle, extensibility |
+| [Design Decisions](./docs/DESIGN.md) | Why Svelte 5 + Tauri 2, plugin vs framework |
+| [Gotchas](./docs/GOTCHAS.md) | Tauri 2 + Svelte 5 pitfalls to avoid |
+| [Tauri Setup](./docs/TAURI_SETUP.md) | Platform-specific Tauri configuration |
+| [Mobile](./docs/MOBILE.md) | Android & iOS development setup |
+| [CI/CD](./docs/CI_CD.md) | GitHub Actions workflows |
+| [Distribution](./docs/DISTRIBUTION.md) | Building & distributing for all platforms |
+| [Release](./docs/RELEASE.md) | Automated release workflow |
+| [Code Signing](./docs/CODE_SIGNING.md) | Signing for Windows, macOS, mobile |
+| [Auto-Updates](./docs/AUTO_UPDATES.md) | Tauri updater configuration |
+| [Roadmap](./docs/ROADMAP.md) | Project roadmap and phases |
 
-- **[Usage Guide](./docs/USAGE.md)** - Create projects from this template
-- **[Architecture](./docs/ARCHITECTURE.md)** - System design and structure
-- **[Setup & Configuration](./docs/README.md#-setup--configuration)** - Tauri, mobile, and CI/CD setup
-- **[Distribution](./docs/README.md#-distribution--release)** - Release and distribution guides
-- **[Gotchas & Lessons Learned](./docs/GOTCHAS.md)** - Tauri 2 + Svelte 5 pitfalls to avoid
-
-👉 **[View all documentation](./docs/README.md)**
-
-## 🏗️ Structure
-
-```
-├── template/           # Template files with placeholders
-├── cli/               # Bootstrap CLI tools
-├── plugins/           # Extensible plugin system
-├── examples/          # Example implementations
-└── docs/              # Documentation
-```
-
-## 🔮 Future Integrations
-
-This template is designed to integrate with:
-
-- ✅ **plures/ADP** - Architectural Discipline Package (integrated)
-- ✅ **plures/praxis** - Application logic engine (integrated)
-- ✅ **plures/svelte-ratatui** - TUI rendering for Svelte (integrated)
-- 🔜 **plures/State-docs** - State documentation
-- 🔜 **plures/pluresdb** - Database system
-- 🔜 **plures/unum** - Numeric computation
+👉 **[Browse all docs](./docs/README.md)**
 
 ## 📄 License
 
