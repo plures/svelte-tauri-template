@@ -104,11 +104,11 @@ async function removePlugin(rawName) {
   if (manifest.configFiles && manifest.configFiles.length > 0) {
     let removedCount = 0;
     manifest.configFiles.forEach(configFile => {
-      const filePath = path.join(PROJECT_DIR, configFile);
-      
-      // Prevent path traversal in configFiles entries
-      const resolvedConfig = path.resolve(PROJECT_DIR, configFile);
-      if (!resolvedConfig.startsWith(PROJECT_DIR + path.sep) && resolvedConfig !== PROJECT_DIR) {
+      const filePath = path.resolve(PROJECT_DIR, configFile);
+
+      // Prevent path traversal in configFiles entries (and never allow deleting the project root)
+      const rel = path.relative(PROJECT_DIR, filePath);
+      if (rel === '' || rel === '.' || rel.startsWith('..') || path.isAbsolute(rel)) {
         logWarning(`Skipping suspicious config path: ${configFile}`);
         return;
       }
