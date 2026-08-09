@@ -57,8 +57,8 @@ export function validatePluginName(raw) {
     return { valid: false, reason: 'Plugin name must not be empty' };
   }
 
-  if (name.length > 128) {
-    return { valid: false, reason: 'Plugin name must not exceed 128 characters' };
+  if (name.length >= 128) {
+    return { valid: false, reason: 'Plugin name must be less than 128 characters' };
   }
 
   if (!VALID_PLUGIN_NAME.test(name)) {
