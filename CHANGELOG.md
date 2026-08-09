@@ -17,8 +17,6 @@
 - feat: add render-mode utility for tri-mode rendering (GUI/TUI CSS/TUI native) (ac61985)
 - docs: update copilot-instructions with praxis, design-dojo, automation rules (0c29335)
 
-# Changelog
-
 ## [0.2.0] — 2026-04-23
 
 - feat(release): add target_version input for milestone-driven releases (620b4fd)
