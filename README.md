@@ -10,7 +10,7 @@ An extensible template for bootstrapping cross-platform applications using **Sve
 |------|---------|---------|
 | **Node.js** | 20+ | [nodejs.org](https://nodejs.org/) |
 | **Rust** | stable | [rustup.rs](https://rustup.rs/) |
-| **Tauri CLI** | 2.x | `cargo install tauri-cli` |
+| **Tauri CLI** | 2.x | Installed via `npm install` (uses `@tauri-apps/cli`) |
 | **Platform libs** | — | See [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) |
 
 ### 1. Create a New Project
