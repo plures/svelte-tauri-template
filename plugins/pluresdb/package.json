@@ -1,6 +1,6 @@
 {
   "name": "@plures/pluresdb",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "PluresDB Application Runtime — CRDT store, reactive procedures, .px language, Chronos timeline",
   "type": "module",
   "main": "./dist/index.js",

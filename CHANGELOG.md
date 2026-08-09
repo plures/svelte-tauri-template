@@ -1,3 +1,10 @@
+## [0.4.1] — 2026-08-09
+
+- fix: harden plugin CLI validation (add/remove/info) (#29) (b0bba55)
+- chore: update Tauri 2 and Svelte 5 dependencies to latest (#28) (d277472)
+- docs: consolidate docs and improve quick-start guidance (#30) (c82179e)
+- chore: delegate dependabot-auto-merge.yml to org reusable template (#27) (4fdf16f)
+
 ## [0.4.0] — 2026-07-24
 
 - ci(release): trigger release pipeline on merge to main (#26) (9d256df)
